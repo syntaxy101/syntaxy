@@ -215,6 +215,67 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .profile-grad-preview{width:100%;height:32px;border-radius:10px;margin-top:8px;border:1px solid var(--border);background:linear-gradient(135deg,#58a6ff,#3fb950)}
 .checkbox-row{display:flex;align-items:center;font-size:13px;color:var(--text)}
 
+/* Preview window positioning - side by side layout */
+.ov.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* When both edit modal and preview are open, arrange side by side */
+#m-profile.show ~ #m-profile-preview.show,
+#m-ui.show ~ #m-ui-preview.show,
+#m-srv.show ~ #m-srv-preview.show {
+  display: flex !important;
+  pointer-events: auto;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+/* Position edit modals to the right */
+#m-profile.show .modal,
+#m-ui.show .modal,
+#m-srv.show .modal {
+  margin-left: auto;
+  margin-right: 5vw;
+}
+
+/* Position preview modals to the left */
+#m-profile-preview .modal,
+#m-ui-preview .modal,
+#m-srv-preview .modal {
+  margin-right: auto;
+  margin-left: 5vw;
+}
+
+/* Make sure both can be seen */
+.ov.show .modal {
+  box-shadow: 0 12px 48px rgba(0,0,0,.6);
+}
+
+/* Stack overlays properly when both are open */
+#m-profile-preview,
+#m-ui-preview,
+#m-srv-preview {
+  z-index: 701;
+}
+
+#m-profile,
+#m-ui,
+#m-srv {
+  z-index: 700;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(3px);
+}
+
+/* Remove background from preview overlays */
+#m-profile-preview,
+#m-ui-preview,
+#m-srv-preview {
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
 /* members */
 .mem-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
 .mem-row:last-child{border-bottom:none}
@@ -226,8 +287,6 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .mem-name:hover{filter:brightness(1.3)}
 .tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;padding:2px 8px;border-radius:4px;background:rgba(88,166,255,.12);color:var(--accent)}
 
-/* login */
-/* login */
 /* login */
 #login-screen{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;background-color:#0a0d11;background-image:var(--login-bg);background-size:cover;background-position:center;background-attachment:fixed}
 #login-screen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.2) 0%,rgba(0,0,0,.5) 100%);z-index:0}
@@ -614,8 +673,29 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   </div>
 </div>
 
+<!-- Profile Preview Window -->
+<div class="ov" id="m-profile-preview" style="pointer-events:none">
+  <div class="modal" style="width:340px;pointer-events:auto">
+    <h3 style="margin-bottom:16px">Live Preview</h3>
+    <div id="preview-profile-card" style="width:300px;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.3);margin:0 auto">
+      <div class="pc-banner" id="preview-pc-banner" style="height:100px;background-size:cover;background-position:center;position:relative"></div>
+      <div class="pc-av" id="preview-pc-av" style="width:84px;height:84px;border-radius:50%;border:4px solid var(--pc-primary,#161b22);position:absolute;top:58px;left:50%;transform:translateX(-50%);overflow:hidden;background:#1c2333;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.4);z-index:5;margin-left:-20px"></div>
+      <div class="pc-info" style="padding:52px 20px 8px;background:var(--pc-primary,#161b22);position:relative;z-index:1">
+        <div style="text-align:center">
+          <span class="pc-name" id="preview-pc-name" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;display:block"></span>
+        </div>
+        <div class="pc-bio" id="preview-pc-bio" style="font-size:12px;color:#a0a8b3;margin-top:8px;min-height:16px;line-height:1.5;text-align:center"></div>
+      </div>
+      <div class="pc-actions-wrap" style="padding:12px 20px 20px;background:var(--pc-primary,#161b22);position:relative">
+        <div class="pc-actions" style="display:flex;gap:8px;position:relative;z-index:1">
+          <button class="pc-btn pri" id="preview-profile-btn" style="flex:1;padding:10px 0;border-radius:10px;border:none;font-size:12px;font-weight:600;cursor:default;color:#fff">Sample Button</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODALS -->
-<!-- Profile -->
 <!-- Profile -->
 <div class="ov" id="m-profile">
   <div class="modal" style="width:400px">
@@ -709,6 +789,44 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   </div>
 </div>
 
+<!-- Personal UI Preview Window -->
+<div class="ov" id="m-ui-preview" style="pointer-events:none">
+  <div class="modal" style="width:500px;pointer-events:auto">
+    <h3 style="margin-bottom:16px">Live Preview</h3>
+    <div id="preview-ui-sample" style="border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <!-- Mini sidebar -->
+      <div style="display:flex;height:300px">
+        <div id="preview-ui-sidebar" style="width:180px;padding:12px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:11px;font-weight:600;opacity:0.6;margin-bottom:4px">CHANNELS</div>
+          <div style="padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.08)"># general</div>
+          <div style="padding:6px 8px;border-radius:6px;opacity:0.7"># random</div>
+          <div style="padding:6px 8px;border-radius:6px;opacity:0.7"># announcements</div>
+        </div>
+        <!-- Mini main area -->
+        <div id="preview-ui-main" style="flex:1;display:flex;flex-direction:column">
+          <div id="preview-ui-header" style="padding:10px 14px;border-bottom:1px solid;display:flex;align-items:center;gap:8px">
+            <span style="font-size:14px;font-weight:600"># general</span>
+          </div>
+          <div id="preview-ui-content" style="flex:1;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:8px;align-items:start">
+              <div style="width:28px;height:28px;border-radius:50%;opacity:0.7" id="preview-ui-avatar"></div>
+              <div style="flex:1">
+                <div style="font-weight:600;font-size:12px;margin-bottom:2px">User</div>
+                <div style="font-size:12px;opacity:0.9">Sample message text</div>
+              </div>
+            </div>
+          </div>
+          <div id="preview-ui-input" style="padding:10px 14px;border-top:1px solid">
+            <div style="padding:8px 12px;border-radius:8px;border:1px solid;font-size:12px;opacity:0.6">
+              Message #general...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Server Settings -->
 <div class="ov" id="m-srv">
   <div class="modal" style="width:460px">
@@ -752,6 +870,64 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     <div class="btn-row">
       <button class="btn pri" id="btn-save-srv">Save</button>
       <button class="btn sec" data-close="m-srv">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Server Preview Window - UNIQUE PER SERVER -->
+<div class="ov" id="m-srv-preview" style="pointer-events:none">
+  <div class="modal" style="width:520px;pointer-events:auto">
+    <h3 style="margin-bottom:16px">Server Preview</h3>
+
+    <!-- Server Rail Icon Preview -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--dim);margin-bottom:8px">SERVER ICON</div>
+      <div style="display:flex;gap:8px;align-items:center;padding:12px;background:var(--surface2);border-radius:10px">
+        <div id="preview-srv-rail-icon" class="rail-icon" style="position:relative;border-color:var(--accent)"></div>
+        <span style="font-size:13px;opacity:0.8">This is how your server appears in the rail</span>
+      </div>
+    </div>
+
+    <!-- Server UI Preview -->
+    <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <!-- Banner preview -->
+      <div id="preview-srv-banner" style="height:80px;background-size:cover;background-position:center;display:none"></div>
+
+      <div style="display:flex;height:280px">
+        <!-- Mini sidebar -->
+        <div id="preview-srv-sidebar" style="width:180px;padding:12px;display:flex;flex-direction:column;gap:6px">
+          <div id="preview-srv-title" style="font-size:13px;font-weight:700;margin-bottom:8px"></div>
+          <div style="font-size:11px;font-weight:600;opacity:0.6;margin-bottom:4px">CHANNELS</div>
+          <div style="padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.08)"># general</div>
+          <div style="padding:6px 8px;border-radius:6px;opacity:0.7"># random</div>
+        </div>
+
+        <!-- Mini main area -->
+        <div id="preview-srv-main" style="flex:1;display:flex;flex-direction:column;position:relative">
+          <!-- Background layer -->
+          <div id="preview-srv-bg" style="position:absolute;inset:0;background-size:cover;background-position:center;z-index:0"></div>
+
+          <div style="position:relative;z-index:1;display:flex;flex-direction:column;height:100%">
+            <div id="preview-srv-header" style="padding:10px 14px;border-bottom:1px solid;background:rgba(13,17,23,0.82);backdrop-filter:blur(10px)">
+              <span style="font-size:14px;font-weight:600"># general</span>
+            </div>
+            <div id="preview-srv-content" style="flex:1;padding:14px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;gap:8px;align-items:start">
+                <div style="width:28px;height:28px;border-radius:50%;opacity:0.7" id="preview-srv-avatar"></div>
+                <div style="flex:1">
+                  <div style="font-weight:600;font-size:12px;margin-bottom:2px">User</div>
+                  <div style="font-size:12px;opacity:0.9">Sample message</div>
+                </div>
+              </div>
+            </div>
+            <div id="preview-srv-input" style="padding:10px 14px;border-top:1px solid;background:rgba(13,17,23,0.88);backdrop-filter:blur(10px)">
+              <div style="padding:8px 12px;border-radius:8px;border:1px solid;font-size:12px;opacity:0.6">
+                Message...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1305,6 +1481,54 @@ async function syncProfileToServer() {
   }
 }
 
+function updateProfilePreview() {
+  const name = document.getElementById('p-name').value || S.me.name || 'User';
+  const bio = document.getElementById('p-bio').value || '';
+  const color = document.getElementById('p-color').value;
+  const accent = document.getElementById('p-accent').value;
+  const gradient = `linear-gradient(135deg, ${color}, ${accent})`;
+  const primaryDark = darkenColor(color, 0.7);
+
+  const card = document.getElementById('preview-profile-card');
+  card.style.setProperty('--pc-primary', primaryDark);
+  card.style.setProperty('--pc-accent-fade', `${accent}15`);
+  card.style.background = primaryDark;
+  card.style.border = `1px solid ${color}30`;
+
+  const banner = document.getElementById('preview-pc-banner');
+  const avatarFile = document.getElementById('ub-avatar').querySelector('input').files[0];
+  const bannerFile = document.getElementById('ub-banner').querySelector('input').files[0];
+
+  if(bannerFile) {
+    readF(bannerFile).then(src => {
+      banner.style.background = `url(${src}) center/cover`;
+    });
+  } else if(S.me.banner) {
+    banner.style.background = `url(${S.me.banner}) center/cover`;
+  } else {
+    banner.style.background = gradient;
+  }
+
+  const avDiv = document.getElementById('preview-pc-av');
+  if(avatarFile) {
+    readF(avatarFile).then(src => {
+      avDiv.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;">`;
+    });
+  } else if(S.me.avatar) {
+    avDiv.innerHTML = `<img src="${S.me.avatar}" style="width:100%;height:100%;object-fit:cover;">`;
+  } else {
+    avDiv.innerHTML = `<div class="default-av" style="width:100%;height:100%;background:${color};color:#fff;font-size:34px;display:flex;align-items:center;justify-content:center">✦</div>`;
+  }
+
+  document.getElementById('preview-pc-name').textContent = name;
+  document.getElementById('preview-pc-name').style.color = color;
+  document.getElementById('preview-pc-bio').textContent = bio || 'No bio yet';
+
+  // Update button gradient
+  const btn = document.getElementById('preview-profile-btn');
+  if(btn) btn.style.background = gradient;
+}
+
 // Initialize app
 async function initApp() {
   // Show login screen immediately while loading
@@ -1357,6 +1581,26 @@ async function initApp() {
     // Don't renderAll yet - wait for login
   }
 }
+
+// ADD THIS FUNCTION - it was referenced but never defined
+document.getElementById('btn-profile').onclick=()=>{
+  document.getElementById('p-name').value = S.me.name || '';
+  document.getElementById('p-bio').value = S.me.bio || '';
+  document.getElementById('p-color').value = S.me.color || '#58a6ff';
+  document.getElementById('p-accent').value = S.me.accent || '#3fb950';
+  const bioCounter = document.getElementById('bio-counter');
+  if(bioCounter) bioCounter.textContent = `${(S.me.bio||'').length}/50`;
+  const prev = document.getElementById('profile-grad-preview');
+  if(prev) prev.style.background = `linear-gradient(135deg, ${S.me.color||'#58a6ff'}, ${S.me.accent||'#3fb950'})`;
+  const avatarInput = document.getElementById('ub-avatar').querySelector('input');
+  const bannerInput = document.getElementById('ub-banner').querySelector('input');
+  if(avatarInput) avatarInput.value = '';
+  if(bannerInput) bannerInput.value = '';
+
+  openM('m-profile');
+  openM('m-profile-preview');
+  updateProfilePreview();
+};
 
 // Start the app
 initApp();
@@ -2181,7 +2425,14 @@ function closeM(id){
 
 // Wire all modal close buttons (X buttons and Cancel buttons with data-close)
 document.querySelectorAll('[data-close]').forEach(btn=>{
-  btn.onclick=()=>closeM(btn.dataset.close);
+  btn.onclick=()=>{
+    const modalId = btn.dataset.close;
+    closeM(modalId);
+    if(btn.dataset.close === 'm-profile') closeM('m-profile-preview'); // ADD THIS
+    if(modalId === 'm-profile') closeM('m-profile-preview');
+    if(modalId === 'm-ui') closeM('m-ui-preview');
+    if(modalId === 'm-srv') closeM('m-srv-preview');
+  };
 });
 
 /* ─── UPLOAD PREVIEW ─── */
@@ -2241,25 +2492,31 @@ document.getElementById('btn-save-editchannel').onclick=async()=>{
   autoSave();
 };
 
-/* ─── PROFILE OPEN & SAVE ─── */
-document.getElementById('btn-profile').onclick=()=>{
-  document.getElementById('p-name').value = S.me.name || '';
-  document.getElementById('p-bio').value = S.me.bio || '';
-  document.getElementById('p-color').value = S.me.color || '#58a6ff';
-  document.getElementById('p-accent').value = S.me.accent || '#3fb950';
-  // Update bio counter
-  const bioCounter = document.getElementById('bio-counter');
-  if(bioCounter) bioCounter.textContent = `${(S.me.bio||'').length}/50`;
-  // Update gradient preview
-  const prev = document.getElementById('profile-grad-preview');
-  if(prev) prev.style.background = `linear-gradient(135deg, ${S.me.color||'#58a6ff'}, ${S.me.accent||'#3fb950'})`;
-  // Clear file inputs
-  const avatarInput = document.getElementById('ub-avatar').querySelector('input');
-  const bannerInput = document.getElementById('ub-banner').querySelector('input');
-  if(avatarInput) avatarInput.value = '';
-  if(bannerInput) bannerInput.value = '';
-  openM('m-profile');
-};
+// Replace existing listeners with:
+document.getElementById('p-bio').addEventListener('input', () => {
+  const bio = document.getElementById('p-bio').value;
+  const counter = document.getElementById('bio-counter');
+  if(counter) counter.textContent = `${bio.length}/50`;
+  updateProfilePreview(); // ADD THIS
+});
+
+['p-color','p-accent'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    const c = document.getElementById('p-color').value;
+    const a = document.getElementById('p-accent').value;
+    const prev = document.getElementById('profile-grad-preview');
+    if(prev) prev.style.background = `linear-gradient(135deg, ${c}, ${a})`;
+    updateProfilePreview(); // ADD THIS
+  });
+});
+
+// ADD THIS NEW LISTENER for name changes
+document.getElementById('p-name').addEventListener('input', updateProfilePreview);
+
+// ADD THIS NEW LISTENER for avatar/banner uploads
+['ub-avatar', 'ub-banner'].forEach(id => {
+  document.getElementById(id).querySelector('input').addEventListener('change', updateProfilePreview);
+});
 
 document.getElementById('btn-save-prof').onclick = async ()=>{
   S.me.name = document.getElementById('p-name').value.trim() || S.me.name;
@@ -2274,6 +2531,7 @@ document.getElementById('btn-save-prof').onclick = async ()=>{
   if(bf) S.me.banner = await readF(bf);
 
   closeM('m-profile');
+  closeM('m-profile-preview');
   renderAll();
   autoSave();
   syncProfileToServer();
@@ -2315,6 +2573,54 @@ function openUISettings(){
 
   toggleUISidebarGradControls();
   openM('m-ui');
+  openM('m-ui-preview');
+  updateUIPreview();
+}
+
+function updateUIPreview() {
+  const bg = document.getElementById('ui-bg').value;
+  const surf = document.getElementById('ui-surf').value;
+  const acc1 = document.getElementById('ui-acc1').value;
+  const acc2 = document.getElementById('ui-acc2').value;
+  const text = document.getElementById('ui-text').value;
+  const border = document.getElementById('ui-border').value;
+  const sidebarStyle = document.getElementById('ui-sidebar-style').value;
+  const sbGrad1 = document.getElementById('ui-sb-grad1').value;
+  const sbGrad2 = document.getElementById('ui-sb-grad2').value;
+
+  const sample = document.getElementById('preview-ui-sample');
+  const sidebar = document.getElementById('preview-ui-sidebar');
+  const main = document.getElementById('preview-ui-main');
+  const header = document.getElementById('preview-ui-header');
+  const content = document.getElementById('preview-ui-content');
+  const input = document.getElementById('preview-ui-input');
+  const avatar = document.getElementById('preview-ui-avatar');
+
+  // Apply colors
+  sample.style.background = bg;
+  sample.style.color = text;
+  sample.style.borderColor = border;
+
+  if(sidebarStyle === 'gradient') {
+    sidebar.style.background = `linear-gradient(180deg, ${sbGrad1}, ${sbGrad2})`;
+  } else {
+    sidebar.style.background = surf;
+  }
+
+  main.style.background = bg;
+  header.style.background = `rgba(${hexToRgb(surf)}, 0.8)`;
+  header.style.borderBottomColor = border;
+  header.style.color = text;
+
+  content.style.color = text;
+
+  input.style.background = `rgba(${hexToRgb(surf)}, 0.8)`;
+  input.style.borderTopColor = border;
+  input.querySelector('div').style.background = surf;
+  input.querySelector('div').style.borderColor = border;
+  input.querySelector('div').style.color = text;
+
+  avatar.style.background = `linear-gradient(135deg, ${acc1}, ${acc2})`;
 }
 
 function toggleUISidebarGradControls() {
@@ -2338,6 +2644,7 @@ document.getElementById('ui-sidebar-style').addEventListener('change', toggleUIS
       applyTheme(S.personalUI);
     }
     document.getElementById('ui-grad-swatch').style.background=`linear-gradient(135deg,${S.personalUI.acc1},${S.personalUI.acc2})`;
+    updateUIPreview();
   });
 });
 
@@ -2349,6 +2656,7 @@ document.getElementById('ui-sidebar-style').addEventListener('change', toggleUIS
     if((S.view === 'dms' || S.personalUI.override) && S.personalUI.sidebarStyle === 'gradient') {
       applyTheme(S.personalUI);
     }
+    updateUIPreview();
   });
 });
 
@@ -2356,6 +2664,7 @@ document.getElementById('btn-save-ui').onclick=()=>{
   S.personalUI.override = document.getElementById('ui-override').checked;
   S.personalUI.sidebarStyle = document.getElementById('ui-sidebar-style').value;
   closeM('m-ui');
+  closeM('m-ui-preview');
   renderAll();
   autoSave();
   syncSettingsToServer();
@@ -2376,6 +2685,7 @@ document.getElementById('btn-reset-ui').onclick=()=>{
   };
   renderAll();
   openUISettings();
+  updateUIPreview();
   autoSave();
   syncSettingsToServer();
 };
@@ -2405,6 +2715,8 @@ document.getElementById('btn-srv-set').onclick=()=>{
 
   toggleServerSidebarGradControls();
   openM('m-srv');
+  openM('m-srv-preview');
+  updateServerPreview();
 };
 
 function toggleServerSidebarGradControls() {
@@ -2414,6 +2726,9 @@ function toggleServerSidebarGradControls() {
 }
 
 document.getElementById('s-sidebar-style').addEventListener('change', toggleServerSidebarGradControls);
+
+// ADD name listener:
+document.getElementById('s-name').addEventListener('input', updateServerPreview);
 
 // live updates for server aesthetics
 ['s-bg','s-surf','s-acc1','s-acc2','s-text','s-border'].forEach(id=>{
@@ -2429,6 +2744,7 @@ document.getElementById('s-sidebar-style').addEventListener('change', toggleServ
       applyTheme(s.aesthetics);
     }
     document.getElementById('s-grad-swatch').style.background=`linear-gradient(135deg,${s.aesthetics.acc1},${s.aesthetics.acc2})`;
+    updateServerPreview();
   });
 });
 
@@ -2441,7 +2757,19 @@ document.getElementById('s-sidebar-style').addEventListener('change', toggleServ
     if(S.view === 'server' && !S.personalUI.override && s.aesthetics.sidebarStyle === 'gradient') {
       applyTheme(s.aesthetics);
     }
+    updateServerPreview();
   });
+});
+
+// ADD sidebar style listener:
+document.getElementById('s-sidebar-style').addEventListener('change', () => {
+  toggleServerSidebarGradControls();
+  updateServerPreview(); // ADD THIS
+});
+
+// ADD file upload listeners:
+['ub-srv-icon', 'ub-srv-ban', 'ub-srv-chbg'].forEach(id => {
+  document.getElementById(id).querySelector('input').addEventListener('change', updateServerPreview);
 });
 
 document.getElementById('btn-save-srv').onclick=async()=>{
@@ -2452,8 +2780,98 @@ document.getElementById('btn-save-srv').onclick=async()=>{
   const iF=document.getElementById('ub-srv-icon').querySelector('input').files[0]; if(iF) s.iconImg =await readF(iF);
   const bF=document.getElementById('ub-srv-ban').querySelector('input').files[0];  if(bF) s.banner  =await readF(bF);
   const cF=document.getElementById('ub-srv-chbg').querySelector('input').files[0]; if(cF) s.defChBg =await readF(cF);
-  closeM('m-srv');renderAll();autoSave();
+  closeM('m-srv');renderAll();autoSave();closeM('m-srv-preview');
 };
+
+function updateServerPreview() {
+  const s = srv();
+  if(!s) return;
+
+  const name = document.getElementById('s-name').value;
+  const bg = document.getElementById('s-bg').value;
+  const surf = document.getElementById('s-surf').value;
+  const acc1 = document.getElementById('s-acc1').value;
+  const acc2 = document.getElementById('s-acc2').value;
+  const text = document.getElementById('s-text').value;
+  const border = document.getElementById('s-border').value;
+  const sidebarStyle = document.getElementById('s-sidebar-style').value;
+  const sbGrad1 = document.getElementById('s-sb-grad1').value;
+  const sbGrad2 = document.getElementById('s-sb-grad2').value;
+
+  // Rail icon preview
+  const railIcon = document.getElementById('preview-srv-rail-icon');
+  const iconFile = document.getElementById('ub-srv-icon').querySelector('input').files[0];
+  if(iconFile) {
+    readF(iconFile).then(src => {
+      railIcon.innerHTML = `<img src="${src}">`;
+    });
+  } else if(s.iconImg) {
+    railIcon.innerHTML = `<img src="${s.iconImg}">`;
+  } else {
+    railIcon.innerHTML = s.icon || name[0];
+  }
+  railIcon.style.borderColor = acc1;
+
+  // Banner preview
+  const banner = document.getElementById('preview-srv-banner');
+  const bannerFile = document.getElementById('ub-srv-ban').querySelector('input').files[0];
+  if(bannerFile) {
+    readF(bannerFile).then(src => {
+      banner.style.backgroundImage = `url(${src})`;
+      banner.style.display = 'block';
+    });
+  } else if(s.banner) {
+    banner.style.backgroundImage = `url(${s.banner})`;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+
+  // Title
+  document.getElementById('preview-srv-title').textContent = name;
+  document.getElementById('preview-srv-title').style.color = text;
+
+  // Sidebar
+  const sidebar = document.getElementById('preview-srv-sidebar');
+  if(sidebarStyle === 'gradient') {
+    sidebar.style.background = `linear-gradient(180deg, ${sbGrad1}, ${sbGrad2})`;
+  } else {
+    sidebar.style.background = surf;
+  }
+  sidebar.style.color = text;
+
+  // Main area
+  const main = document.getElementById('preview-srv-main');
+  main.style.background = bg;
+  main.style.color = text;
+
+  // Channel background
+  const bgLayer = document.getElementById('preview-srv-bg');
+  const chBgFile = document.getElementById('ub-srv-chbg').querySelector('input').files[0];
+  if(chBgFile) {
+    readF(chBgFile).then(src => {
+      bgLayer.style.backgroundImage = `url(${src})`;
+      bgLayer.style.opacity = '0.4';
+    });
+  } else if(s.defChBg) {
+    bgLayer.style.backgroundImage = `url(${s.defChBg})`;
+    bgLayer.style.opacity = '0.4';
+  } else {
+    bgLayer.style.backgroundImage = 'none';
+  }
+
+  // Header, content, input
+  document.getElementById('preview-srv-header').style.borderBottomColor = border;
+  document.getElementById('preview-srv-header').style.color = text;
+  document.getElementById('preview-srv-content').style.color = text;
+  document.getElementById('preview-srv-input').style.borderTopColor = border;
+  document.getElementById('preview-srv-input').querySelector('div').style.background = surf;
+  document.getElementById('preview-srv-input').querySelector('div').style.borderColor = border;
+  document.getElementById('preview-srv-input').querySelector('div').style.color = text;
+
+  // Avatar gradient
+  document.getElementById('preview-srv-avatar').style.background = `linear-gradient(135deg, ${acc1}, ${acc2})`;
+}
 
 /* ─── CREATE SERVER ─── */
 document.getElementById('btn-do-newsrv').onclick = async () => {
