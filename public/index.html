@@ -1261,6 +1261,50 @@ function autoSave() {
   saveTimeout = setTimeout(saveState, 1000);
 }
 
+// Sync settings (gallery + personalUI) to server database
+let syncTimeout;
+function syncSettingsToServer() {
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    try {
+      if (!getToken()) return;
+      await api('/users/settings', {
+        method: 'PUT',
+        body: {
+          gallery: S.me.gallery,
+          personal_ui: S.personalUI
+        }
+      });
+      console.log('Settings synced to server');
+    } catch(e) {
+      console.warn('Failed to sync settings:', e);
+    }
+  }, 1500);
+}
+
+// Sync full profile to server database
+async function syncProfileToServer() {
+  try {
+    if (!getToken()) return;
+    await api('/users/profile', {
+      method: 'PUT',
+      body: {
+        display_name: S.me.name,
+        bio: S.me.bio,
+        color: S.me.color,
+        accent: S.me.accent,
+        avatar: S.me.avatar,
+        banner: S.me.banner,
+        gallery: S.me.gallery,
+        personal_ui: S.personalUI
+      }
+    });
+    console.log('Profile synced to server');
+  } catch(e) {
+    console.warn('Failed to sync profile:', e);
+  }
+}
+
 // Initialize app
 async function initApp() {
   // Show login screen immediately while loading
@@ -2111,138 +2155,74 @@ function editMsg(id){
 }
 
 function reactToMsg(id){
-  const emoji = prompt('React with emoji:','👍');
-  if(!emoji) return;
-  const c = ch();
-  const m = c.msgs.find(x => x.id === id);
-  if(!m) return;
-  if(!m.reactions) m.reactions = {};
-  if(!m.reactions[emoji]) m.reactions[emoji] = [];
-  const idx = m.reactions[emoji].indexOf('me');
-  if(idx > -1) {
-    m.reactions[emoji].splice(idx, 1);
-    if(m.reactions[emoji].length === 0) delete m.reactions[emoji];
-  } else {
-    m.reactions[emoji].push('me');
-  }
-  renderMsgs();
+  const emojis=['👍','❤️','😂','🔥','😮','🎉','💯','😢'];
+  const c=ch();const m=c.msgs.find(x=>x.id===id);if(!m)return;
+  const pick=prompt('React with emoji:\n'+emojis.join(' ')+'\n\nOr type any emoji:');
+  if(!pick||!pick.trim())return;
+  const emoji=pick.trim();
+  if(!m.reactions)m.reactions={};
+  if(!m.reactions[emoji])m.reactions[emoji]=[];
+  const idx=m.reactions[emoji].indexOf('me');
+  if(idx>-1){m.reactions[emoji].splice(idx,1);if(m.reactions[emoji].length===0)delete m.reactions[emoji];}
+  else{m.reactions[emoji].push('me');}
+  const row=document.querySelector(`.msg-row[data-id="${id}"]`);
+  if(row){const newRow=createMsgRow(m);row.replaceWith(newRow);}
   autoSave();
 }
 
-/* ─── MODAL SYSTEM ─── */
-function openM(id){
-  document.getElementById(id).classList.add('show');
-}
-
-function closeM(id){
-  document.getElementById(id).classList.remove('show');
-}
-
-// Wire all modal close buttons (X buttons and Cancel buttons with data-close)
-document.querySelectorAll('[data-close]').forEach(btn=>{
-  btn.onclick=()=>closeM(btn.dataset.close);
-});
-
-/* ─── UPLOAD PREVIEW ─── */
-function setPreview(boxId, src){
-  const box=document.getElementById(boxId);
-  if(!box) return;
-  const ph=box.querySelector('.ph');
-  const existing=box.querySelector('img');
-  if(existing) existing.remove();
-  if(src){
-    const img=document.createElement('img');
-    img.src=src;
-    box.appendChild(img);
-    if(ph) ph.style.display='none';
-  } else {
-    if(ph) ph.style.display='';
-  }
-}
-
-/* ─── DELETE MESSAGE ─── */
-function deleteMsg(id){
-  if(!confirm('Delete this message?')) return;
-  const c=ch();
-  const idx=c.msgs.findIndex(m=>m.id===id);
-  if(idx>-1){
-    if(typeof id === 'number'){
-      api(`/messages/${id}`,{method:'DELETE'}).catch(err=>console.error('Delete failed:',err));
-    }
-    c.msgs.splice(idx,1);
-    const row=document.querySelector(`.msg-row[data-id="${id}"]`);
-    if(row) row.remove();
-    autoSave();
-  }
-}
-
-/* ─── PROFILE BUTTON ─── */
+/* ─── PROFILE OPEN & SAVE ─── */
 document.getElementById('btn-profile').onclick=()=>{
-  document.getElementById('p-name').value=S.me.name||'';
-  document.getElementById('p-bio').value=S.me.bio||'';
-  document.getElementById('p-color').value=S.me.color||'#58a6ff';
-  document.getElementById('p-accent').value=S.me.accent||'#3fb950';
-  document.getElementById('bio-counter').textContent=(S.me.bio||'').length+'/50';
-  document.getElementById('profile-grad-preview').style.background=`linear-gradient(135deg,${S.me.color||'#58a6ff'},${S.me.accent||'#3fb950'})`;
-  setPreview('ub-avatar',S.me.avatar||'');
-  setPreview('ub-banner',S.me.banner||'');
+  document.getElementById('p-name').value = S.me.name || '';
+  document.getElementById('p-bio').value = S.me.bio || '';
+  document.getElementById('p-color').value = S.me.color || '#58a6ff';
+  document.getElementById('p-accent').value = S.me.accent || '#3fb950';
+  // Update bio counter
+  const bioCounter = document.getElementById('bio-counter');
+  if(bioCounter) bioCounter.textContent = `${(S.me.bio||'').length}/50`;
+  // Update gradient preview
+  const prev = document.getElementById('profile-grad-preview');
+  if(prev) prev.style.background = `linear-gradient(135deg, ${S.me.color||'#58a6ff'}, ${S.me.accent||'#3fb950'})`;
+  // Clear file inputs
+  const avatarInput = document.getElementById('ub-avatar').querySelector('input');
+  const bannerInput = document.getElementById('ub-banner').querySelector('input');
+  if(avatarInput) avatarInput.value = '';
+  if(bannerInput) bannerInput.value = '';
   openM('m-profile');
 };
 
-// Bio counter live update
-document.getElementById('p-bio').addEventListener('input',e=>{
-  document.getElementById('bio-counter').textContent=e.target.value.length+'/50';
-});
+document.getElementById('btn-save-prof').onclick = async ()=>{
+  S.me.name = document.getElementById('p-name').value.trim() || S.me.name;
+  S.me.bio = document.getElementById('p-bio').value.trim();
+  S.me.color = document.getElementById('p-color').value;
+  S.me.accent = document.getElementById('p-accent').value;
 
-// Profile gradient live preview
-['p-color','p-accent'].forEach(id=>{
-  document.getElementById(id).addEventListener('input',()=>{
-    document.getElementById('profile-grad-preview').style.background=
-      `linear-gradient(135deg,${document.getElementById('p-color').value},${document.getElementById('p-accent').value})`;
-  });
-});
-
-/* ─── SAVE PROFILE ─── */
-document.getElementById('btn-save-prof').onclick = async () => {
   const af = document.getElementById('ub-avatar').querySelector('input').files[0];
   if(af) S.me.avatar = await readF(af);
 
   const bf = document.getElementById('ub-banner').querySelector('input').files[0];
   if(bf) S.me.banner = await readF(bf);
 
-  S.me.name = document.getElementById('p-name').value.trim() || S.me.name;
-  S.me.bio = document.getElementById('p-bio').value;
-  S.me.color = document.getElementById('p-color').value;
-  S.me.accent = document.getElementById('p-accent').value;
-
   closeM('m-profile');
   renderAll();
   autoSave();
+  syncProfileToServer();
 };
 
-/* ─── EDIT CHANNEL SAVE ─── */
-document.getElementById('btn-save-editchannel').onclick=async()=>{
-  if(!S.editingChannelId) return;
-  const s=srv();
-  const c=s.channels.find(ch=>ch.id===S.editingChannelId);
-  if(!c) return;
-  const newName=document.getElementById('ec-name').value.trim();
-  const newDesc=document.getElementById('ec-desc').value.trim();
-  if(newName) c.name=newName;
-  c.desc=newDesc;
-  if(typeof c.id==='number'){
-    try{
-      await api(`/servers/${S.srvId}/channels/${c.id}`,{
-        method:'PUT',
-        body:{name:c.name,description:c.desc}
-      });
-    }catch(err){console.error('Edit channel failed:',err)}
-  }
-  S.editingChannelId=null;
-  closeM('m-editchannel');
-  renderAll();
-  autoSave();
-};
+// Live updates for profile modal
+document.getElementById('p-bio').addEventListener('input', () => {
+  const bio = document.getElementById('p-bio').value;
+  const counter = document.getElementById('bio-counter');
+  if(counter) counter.textContent = `${bio.length}/50`;
+});
+
+['p-color','p-accent'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    const c = document.getElementById('p-color').value;
+    const a = document.getElementById('p-accent').value;
+    const prev = document.getElementById('profile-grad-preview');
+    if(prev) prev.style.background = `linear-gradient(135deg, ${c}, ${a})`;
+  });
+});
 
 /* ─── UI SETTINGS ─── */
 document.getElementById('btn-ui').onclick=openUISettings;
@@ -2307,6 +2287,7 @@ document.getElementById('btn-save-ui').onclick=()=>{
   closeM('m-ui');
   renderAll();
   autoSave();
+  syncSettingsToServer();
 };
 
 document.getElementById('btn-reset-ui').onclick=()=>{
@@ -2325,6 +2306,7 @@ document.getElementById('btn-reset-ui').onclick=()=>{
   renderAll();
   openUISettings();
   autoSave();
+  syncSettingsToServer();
 };
 
 /* ─── SERVER SETTINGS ─── */
@@ -2650,6 +2632,25 @@ async function handleAuth() {
       });
 
       setToken(data.token);
+
+      const defaultGallery = {
+        items:[], bg:'', bgColor:'#0d1117', surface:'#161b22',
+        acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d'
+      };
+      const defaultUI = {
+        override:false, bg:'#0d1117', surface:'#161b22', acc1:'#58a6ff',
+        acc2:'#3fb950', text:'#c9d1d9', border:'#30363d',
+        sidebarStyle:'solid', sidebarGrad1:'#161b22', sidebarGrad2:'#1c2333'
+      };
+
+      // Load gallery and personalUI from server
+      const serverGallery = data.user.gallery && Object.keys(data.user.gallery).length > 0
+        ? { ...defaultGallery, ...data.user.gallery }
+        : defaultGallery;
+      const serverUI = data.user.personal_ui && Object.keys(data.user.personal_ui).length > 0
+        ? { ...defaultUI, ...data.user.personal_ui }
+        : defaultUI;
+
       S.me = {
         id: data.user.id,
         name: data.user.display_name || data.user.username,
@@ -2657,10 +2658,13 @@ async function handleAuth() {
         accent: data.user.accent,
         bio: data.user.bio,
         avatar: data.user.avatar,
-        banner: data.user.banner
+        banner: data.user.banner,
+        gallery: serverGallery
       };
+      S.personalUI = serverUI;
 
       await loadUserData();
+      ensureGalleryDefaults();
 
       document.getElementById('login-screen').style.display = 'none';
       renderAll();
@@ -2678,6 +2682,12 @@ async function handleAuth() {
       });
 
       setToken(data.token);
+
+      const defaultGallery = {
+        items:[], bg:'', bgColor:'#0d1117', surface:'#161b22',
+        acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d'
+      };
+
       S.me = {
         id: data.user.id,
         name: data.user.display_name || data.user.username,
@@ -2685,10 +2695,12 @@ async function handleAuth() {
         accent: data.user.accent,
         bio: data.user.bio,
         avatar: data.user.avatar,
-        banner: data.user.banner
+        banner: data.user.banner,
+        gallery: defaultGallery
       };
 
       showLoginSuccess('Account created!');
+      ensureGalleryDefaults();
 
       setTimeout(() => {
         document.getElementById('login-screen').style.display = 'none';
@@ -2869,6 +2881,7 @@ function deleteGalleryItem(idx){
   u.gallery.items.splice(idx, 1);
   renderGallery();
   autoSave();
+  syncSettingsToServer();
 }
 
 document.getElementById('btn-close-gallery').onclick = () => {
@@ -2897,6 +2910,7 @@ document.getElementById('gallery-upload').onchange = async (e) => {
   e.target.value = '';
   renderGallery();
   autoSave();
+  syncSettingsToServer();
 };
 
 // Gallery Settings
@@ -2964,6 +2978,7 @@ document.getElementById('btn-save-gallery-settings').onclick = async () => {
   closeM('m-gallery-settings');
   openGallery('me');
   autoSave();
+  syncSettingsToServer();
 };
 
 document.getElementById('btn-reset-gallery-settings').onclick = () => {
@@ -2981,10 +2996,10 @@ document.getElementById('btn-reset-gallery-settings').onclick = () => {
   closeM('m-gallery-settings');
   openGallery('me');
   autoSave();
+  syncSettingsToServer();
 };
 
 
 </script>
 </body>
 </html>
-
