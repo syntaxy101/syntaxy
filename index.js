@@ -22,7 +22,6 @@ const pool = new Pool({
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static('public'));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Serve uploaded files
@@ -42,6 +41,22 @@ const storage = multer.diskStorage({
                                    }
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
+
+// ============================================
+// AUTO-MIGRATION: Add settings columns if missing
+// ============================================
+(async () => {
+    try {
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS gallery JSONB DEFAULT '{}'`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_ui JSONB DEFAULT '{}'`);
+        console.log('Migration check complete');
+    } catch (err) {
+        console.error('Migration error:', err);
+    }
+})();
+
+// Serve static frontend
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================
 // AUTHENTICATION MIDDLEWARE
@@ -148,6 +163,10 @@ app.post('/api/auth/login', async (req, res) => {
         // Don't send password back
         delete user.password;
 
+        // Ensure gallery/personal_ui are objects
+        user.gallery = user.gallery || {};
+        user.personal_ui = user.personal_ui || {};
+
         res.json({ user, token });
     } catch (err) {
         console.error('Login error:', err);
@@ -159,7 +178,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, username, display_name, color, accent, bio, avatar, banner FROM users WHERE id = $1',
+            'SELECT id, username, display_name, color, accent, bio, avatar, banner, gallery, personal_ui FROM users WHERE id = $1',
             [req.user.id]
         );
 
@@ -167,7 +186,10 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        res.json(result.rows[0]);
+        const user = result.rows[0];
+        user.gallery = user.gallery || {};
+        user.personal_ui = user.personal_ui || {};
+        res.json(user);
     } catch (err) {
         console.error('Get me error:', err);
         res.status(500).json({ error: 'Server error' });
@@ -181,7 +203,7 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
 // Update profile
 app.put('/api/users/profile', authenticateToken, async (req, res) => {
     try {
-        const { display_name, bio, color, accent, avatar, banner } = req.body;
+        const { display_name, bio, color, accent, avatar, banner, gallery, personal_ui } = req.body;
 
         const result = await pool.query(
             `UPDATE users
@@ -190,10 +212,15 @@ app.put('/api/users/profile', authenticateToken, async (req, res) => {
                                         color = COALESCE($3, color),
                                         accent = COALESCE($4, accent),
                                         avatar = COALESCE($5, avatar),
-                                        banner = COALESCE($6, banner)
-                                        WHERE id = $7
-                                        RETURNING id, username, display_name, color, accent, bio, avatar, banner`,
-                                        [display_name, bio, color, accent, avatar, banner, req.user.id]
+                                        banner = COALESCE($6, banner),
+                                        gallery = COALESCE($7, gallery),
+                                        personal_ui = COALESCE($8, personal_ui)
+                                        WHERE id = $9
+                                        RETURNING id, username, display_name, color, accent, bio, avatar, banner, gallery, personal_ui`,
+                                        [display_name, bio, color, accent, avatar, banner,
+                                         gallery ? JSON.stringify(gallery) : null,
+                                         personal_ui ? JSON.stringify(personal_ui) : null,
+                                         req.user.id]
         );
 
         res.json(result.rows[0]);
@@ -203,11 +230,72 @@ app.put('/api/users/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// Save user settings (gallery + personalUI) - lightweight endpoint for frequent saves
+app.put('/api/users/settings', authenticateToken, async (req, res) => {
+    try {
+        const { gallery, personal_ui } = req.body;
+
+        const updates = [];
+        const values = [];
+        let paramCount = 0;
+
+        if (gallery !== undefined) {
+            paramCount++;
+            updates.push(`gallery = $${paramCount}`);
+            values.push(JSON.stringify(gallery));
+        }
+        if (personal_ui !== undefined) {
+            paramCount++;
+            updates.push(`personal_ui = $${paramCount}`);
+            values.push(JSON.stringify(personal_ui));
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'No settings to update' });
+        }
+
+        paramCount++;
+        values.push(req.user.id);
+
+        const result = await pool.query(
+            `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING id, gallery, personal_ui`,
+            values
+        );
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Update settings error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get user settings
+app.get('/api/users/settings', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT gallery, personal_ui FROM users WHERE id = $1',
+            [req.user.id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const settings = result.rows[0];
+        settings.gallery = settings.gallery || {};
+        settings.personal_ui = settings.personal_ui || {};
+        res.json(settings);
+    } catch (err) {
+        console.error('Get settings error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Get user by ID
 app.get('/api/users/:id', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, username, display_name, color, accent, bio, avatar, banner FROM users WHERE id = $1',
+            'SELECT id, username, display_name, color, accent, bio, avatar, banner, gallery FROM users WHERE id = $1',
             [req.params.id]
         );
 
@@ -660,6 +748,11 @@ app.post('/api/upload', authenticateToken, upload.single('file'), (req, res) => 
 
     const fileUrl = `/uploads/${req.file.filename}`;
     res.json({ url: fileUrl });
+});
+
+// SPA catch-all: serve index.html for non-API routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ============================================
