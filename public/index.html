@@ -2170,6 +2170,77 @@ function reactToMsg(id){
   autoSave();
 }
 
+/* ─── MODAL SYSTEM ─── */
+function openM(id){
+  document.getElementById(id).classList.add('show');
+}
+
+function closeM(id){
+  document.getElementById(id).classList.remove('show');
+}
+
+// Wire all modal close buttons (X buttons and Cancel buttons with data-close)
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.onclick=()=>closeM(btn.dataset.close);
+});
+
+/* ─── UPLOAD PREVIEW ─── */
+function setPreview(boxId, src){
+  const box=document.getElementById(boxId);
+  if(!box) return;
+  const ph=box.querySelector('.ph');
+  const existing=box.querySelector('img');
+  if(existing) existing.remove();
+  if(src){
+    const img=document.createElement('img');
+    img.src=src;
+    box.appendChild(img);
+    if(ph) ph.style.display='none';
+  } else {
+    if(ph) ph.style.display='';
+  }
+}
+
+/* ─── DELETE MESSAGE ─── */
+function deleteMsg(id){
+  if(!confirm('Delete this message?')) return;
+  const c=ch();
+  const idx=c.msgs.findIndex(m=>m.id===id);
+  if(idx>-1){
+    if(typeof id === 'number'){
+      api(`/messages/${id}`,{method:'DELETE'}).catch(err=>console.error('Delete failed:',err));
+    }
+    c.msgs.splice(idx,1);
+    const row=document.querySelector(`.msg-row[data-id="${id}"]`);
+    if(row) row.remove();
+    autoSave();
+  }
+}
+
+/* ─── EDIT CHANNEL SAVE ─── */
+document.getElementById('btn-save-editchannel').onclick=async()=>{
+  if(!S.editingChannelId) return;
+  const s=srv();
+  const c=s.channels.find(ch=>ch.id===S.editingChannelId);
+  if(!c) return;
+  const newName=document.getElementById('ec-name').value.trim();
+  const newDesc=document.getElementById('ec-desc').value.trim();
+  if(newName) c.name=newName;
+  c.desc=newDesc;
+  if(typeof c.id==='number'){
+    try{
+      await api(`/servers/${S.srvId}/channels/${c.id}`,{
+        method:'PUT',
+        body:{name:c.name,description:c.desc}
+      });
+    }catch(err){console.error('Edit channel failed:',err)}
+  }
+  S.editingChannelId=null;
+  closeM('m-editchannel');
+  renderAll();
+  autoSave();
+};
+
 /* ─── PROFILE OPEN & SAVE ─── */
 document.getElementById('btn-profile').onclick=()=>{
   document.getElementById('p-name').value = S.me.name || '';
