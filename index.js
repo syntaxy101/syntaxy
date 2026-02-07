@@ -751,7 +751,7 @@ app.post('/api/upload', authenticateToken, upload.single('file'), (req, res) => 
 });
 
 // SPA catch-all: serve index.html for non-API routes
-app.get('*', (req, res) => {
+app.get('/{0,}', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
