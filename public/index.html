@@ -1818,6 +1818,7 @@ async function initApp() {
   if (isLoggedIn) {
     loginScreen.style.display = 'none';
     renderAll();
+    initWebSocket(); // Connect WebSocket on page load
   } else {
     loginScreen.style.display = 'flex';
     // Don't renderAll yet - wait for login
@@ -4505,4 +4506,5 @@ async function openDMWithUser(userId) {
 </script>
 </body>
 </html>
+
 
