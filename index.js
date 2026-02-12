@@ -670,7 +670,7 @@ app.get('/api/users/search', authenticateToken, async (req, res) => {
 app.get('/api/users/:id', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, username, display_name, color, accent, bio, avatar, banner FROM users WHERE id = $1',
+            'SELECT id, username, display_name, color, accent, bio, avatar, banner, gallery FROM users WHERE id = $1',
             [req.params.id]
         );
 
