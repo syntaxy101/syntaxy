@@ -1064,6 +1064,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     <div class="upload-box" id="ub-srv-chbg"><input type="file" accept="image/*,image/gif"><span class="ph">Default channel bg</span></div></div>
     <div class="btn-row">
       <button class="btn pri" id="btn-save-srv">Save</button>
+      <button class="btn sec" id="btn-invite-srv" style="background:linear-gradient(135deg,#58a6ff,#3fb950);color:white;border:none">🔗 Invite</button>
       <button class="btn sec" data-close="m-srv">Cancel</button>
     </div>
   </div>
@@ -1139,6 +1140,45 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       <button class="btn pri" id="btn-do-newsrv">Create</button>
       <button class="btn sec" data-close="m-newsrv">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- Join Server via Invite -->
+<div class="ov" id="m-joinsrv">
+  <div class="modal">
+    <button class="modal-x" data-close="m-joinsrv">✕</button>
+    <h3>Join a Server</h3>
+    <p style="font-size:13px;color:var(--dim);margin-bottom:12px">Enter an invite code to join a server</p>
+    <div class="fr"><label>Invite Code</label><input type="text" id="join-invite-code" placeholder="e.g. a1b2c3d4" autocomplete="off"></div>
+    <div id="invite-preview" style="display:none;padding:14px;background:var(--surface2);border-radius:10px;margin:12px 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="invite-srv-icon" style="width:44px;height:44px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;overflow:hidden"></div>
+        <div>
+          <div id="invite-srv-name" style="font-weight:700;font-size:15px"></div>
+          <div id="invite-srv-members" style="font-size:12px;color:var(--dim)"></div>
+        </div>
+      </div>
+    </div>
+    <div id="invite-error" style="display:none;color:#f85149;font-size:13px;margin:8px 0"></div>
+    <div class="btn-row">
+      <button class="btn pri" id="btn-do-joinsrv">Join Server</button>
+      <button class="btn sec" data-close="m-joinsrv">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invite Code Display -->
+<div class="ov" id="m-invite">
+  <div class="modal">
+    <button class="modal-x" data-close="m-invite">✕</button>
+    <h3>Invite People</h3>
+    <p style="font-size:13px;color:var(--dim);margin-bottom:12px">Share this code with others so they can join your server</p>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" id="invite-code-display" readonly style="flex:1;font-family:monospace;font-size:16px;letter-spacing:2px;text-align:center;background:var(--surface2);border:1px solid var(--border);padding:12px;border-radius:8px;color:var(--text)">
+      <button class="btn pri" id="btn-copy-invite" style="white-space:nowrap">📋 Copy</button>
+    </div>
+    <div id="invite-copied-msg" style="display:none;color:var(--accent);font-size:13px;text-align:center;margin-top:8px">Copied!</div>
+    <button class="btn pri" id="btn-new-invite" style="width:100%;margin-top:12px">Generate New Code</button>
   </div>
 </div>
 
@@ -1374,7 +1414,7 @@ async function loadDMsFromDatabase() {
         name: otherDisplayName || otherUsername,
         userId: otherUserId,
         type: 'dm',
-        bg: '',
+        bg: dm.background || '',
         msgs: []
       });
 
@@ -1827,9 +1867,9 @@ async function initApp() {
 
   if (isLoggedIn) {
     loginScreen.style.display = 'none';
-    await loadDMsFromDatabase(); // Load DMs once at startup
+    await loadDMsFromDatabase();
     renderAll();
-    initWebSocket(); // Connect WebSocket on page load
+    initWebSocket();
   } else {
     loginScreen.style.display = 'flex';
     // Don't renderAll yet - wait for login
@@ -1864,11 +1904,10 @@ function T(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-d
 
 /* ─── HELPERS ─── */
 // Cache for fetchFullUser - avoid repeated API calls
-const _userFetchCache = {}; // { oderId: timestamp }
+const _userFetchCache = {};
 const USER_CACHE_TTL = 60000; // 60 seconds
 
 async function fetchFullUser(uid) {
-  // Return cached if recently fetched
   const now = Date.now();
   const cached = U(uid);
   if (_userFetchCache[uid] && (now - _userFetchCache[uid] < USER_CACHE_TTL) && cached.name !== 'User') {
@@ -1931,6 +1970,21 @@ function U(id) {
 function srv(){return S.servers.find(s=>s.id===S.srvId)}
 function ch(){const s=srv();return s.channels.find(c=>c.id===S.chId)||s.dms.find(d=>d.id===S.chId)}
 function readF(f){return new Promise(r=>{const rd=new FileReader();rd.onload=e=>r(e.target.result);rd.readAsDataURL(f)})}
+
+// Upload file to S3 and return URL
+async function uploadFileToS3(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const token = getToken();
+  const resp = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: formData
+  });
+  if (!resp.ok) throw new Error('Upload failed');
+  const data = await resp.json();
+  return data.url;
+}
 function linkify(t){return(t||'').replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')}
 function avHTML(u,sz){
   sz=sz||34;
@@ -2071,6 +2125,20 @@ function renderRail(){
   a.onmouseenter = (e) => showTooltip(e, 'Create Server');
   a.onmouseleave = hideTooltip;
   el.appendChild(a);
+
+  // join server button
+  const j=document.createElement('div');
+  j.className='rail-icon';
+  j.innerHTML='<span class="rail-add" style="font-size:16px">📩</span>';
+  j.onclick=()=>{
+    document.getElementById('join-invite-code').value='';
+    document.getElementById('invite-preview').style.display='none';
+    document.getElementById('invite-error').style.display='none';
+    openM('m-joinsrv');
+  };
+  j.onmouseenter = (e) => showTooltip(e, 'Join Server');
+  j.onmouseleave = hideTooltip;
+  el.appendChild(j);
 }
 
 function renderSidebar(){
@@ -2089,10 +2157,8 @@ function renderSidebar(){
 
   if(S.view==='dms'){
   document.getElementById('sidebar-title').textContent='Direct Messages';
-  // Hide server settings button in DMs
   document.getElementById('btn-srv-set').style.display='none';
 
-  // DMs are loaded once at login/init, not on every render
   const homeServer = S.servers.find(srv => srv.id === 'home');
   const dmList = homeServer ? homeServer.dms : [];
   // ADD SEARCH USERS BUTTON
@@ -2171,15 +2237,15 @@ function renderBg(){
 }
 
 let lastRenderedChId = null;
-const _loadedChannels = new Set(); // Track channels we've already fetched messages for
+const _loadedChannels = new Set();
 
 async function renderMsgs(){
   const c=ch(); if(!c) return;
   const wrap=document.getElementById('messages-wrap');
 
-  // Load messages from API if channel/DM hasn't been loaded yet
+  // Load messages from API only if not already loaded
   if (!_loadedChannels.has(c.id) && typeof c.id === 'number') {
-    _loadedChannels.add(c.id); // Mark as loading to prevent duplicate fetches
+    _loadedChannels.add(c.id);
     try {
       const endpoint = c.type === 'dm'
         ? `/dms/${c.id}/messages`
@@ -2210,7 +2276,7 @@ async function renderMsgs(){
       }));
     } catch (err) {
       console.error('Failed to load messages:', err);
-      _loadedChannels.delete(c.id); // Allow retry on failure
+      _loadedChannels.delete(c.id);
     }
   }
 
@@ -2498,13 +2564,7 @@ async function showPC(e,uid){
   // Parse string IDs to numbers (dataset attributes are always strings)
   if (uid !== 'me' && !isNaN(uid)) uid = Number(uid);
 
-  // For other users, show card immediately with cached data, then refresh
-  let u;
-  if (uid === 'me') {
-    u = S.me;
-  } else {
-    u = U(uid); // Use cached data first for instant display
-  }
+  const u=U(uid);
   const card=document.getElementById('profile-card');
 
   // Get user's colors (with fallbacks)
@@ -2633,7 +2693,7 @@ async function showPC(e,uid){
     card.style.left=l+'px';card.style.top=t+'px';
   });
 
-  // Background refresh: fetch fresh data from API (non-blocking)
+  // Background refresh for other users
   if (uid !== 'me' && typeof uid === 'number') {
     fetchFullUser(uid).then(freshU => {
       if (card.style.display === 'block') {
@@ -2641,8 +2701,7 @@ async function showPC(e,uid){
         document.getElementById('pc-name').textContent = freshU.name;
         document.getElementById('pc-name').style.color = freshU.color || '#58a6ff';
         document.getElementById('pc-bio').textContent = freshU.bio || 'No bio yet';
-        const freshBanner = document.getElementById('pc-banner');
-        if (freshU.banner) freshBanner.style.background = `url(${freshU.banner}) center/cover`;
+        if (freshU.banner) document.getElementById('pc-banner').style.background = `url(${freshU.banner}) center/cover`;
       }
     });
   }
@@ -3272,9 +3331,29 @@ document.getElementById('btn-save-srv').onclick=async()=>{
   s.aesthetics.sidebarBlur = Number(document.getElementById('s-sidebar-blur').value);
   s.aesthetics.sidebarBgMode = document.getElementById('s-sidebar-bg-mode').value;
 
-  const iF=document.getElementById('ub-srv-icon').querySelector('input').files[0]; if(iF) s.iconImg =await readF(iF);
-  const bF=document.getElementById('ub-srv-ban').querySelector('input').files[0];  if(bF) s.banner  =await readF(bF);
-  const cF=document.getElementById('ub-srv-chbg').querySelector('input').files[0]; if(cF) s.defChBg =await readF(cF);
+  try {
+    const iF=document.getElementById('ub-srv-icon').querySelector('input').files[0];
+    if(iF) s.iconImg = await uploadFileToS3(iF);
+    const bF=document.getElementById('ub-srv-ban').querySelector('input').files[0];
+    if(bF) s.banner = await uploadFileToS3(bF);
+    const cF=document.getElementById('ub-srv-chbg').querySelector('input').files[0];
+    if(cF) s.defChBg = await uploadFileToS3(cF);
+  } catch(err) {
+    console.error('Failed to upload server images:', err);
+  }
+
+  // Broadcast to all members via WebSocket
+  if(ws && ws.readyState === WebSocket.OPEN && typeof s.id === 'number') {
+    ws.send(JSON.stringify({
+      type:'server_aesthetics_update',
+      serverId: s.id,
+      aesthetics: s.aesthetics,
+      name: s.name,
+      iconImg: s.iconImg,
+      banner: s.banner,
+      defChBg: s.defChBg
+    }));
+  }
 
   closeM('m-srv');
   closeM('m-srv-preview');
@@ -3440,6 +3519,112 @@ document.getElementById('btn-do-newsrv').onclick = async () => {
   }
 };
 
+/* ─── SERVER INVITES ─── */
+document.getElementById('btn-invite-srv').onclick=async()=>{
+  const s=srv();
+  if(!s || typeof s.id !== 'number') return;
+  try {
+    const invite = await api(`/servers/${s.id}/invites`, { method:'POST' });
+    document.getElementById('invite-code-display').value = invite.code;
+    document.getElementById('invite-copied-msg').style.display = 'none';
+    closeM('m-srv');
+    closeM('m-srv-preview');
+    openM('m-invite');
+  } catch(err) {
+    alert('Failed to create invite: ' + err.message);
+  }
+};
+
+document.getElementById('btn-new-invite').onclick=async()=>{
+  const s=srv();
+  if(!s || typeof s.id !== 'number') return;
+  try {
+    const invite = await api(`/servers/${s.id}/invites`, { method:'POST' });
+    document.getElementById('invite-code-display').value = invite.code;
+    document.getElementById('invite-copied-msg').style.display = 'none';
+  } catch(err) {
+    alert('Failed to create invite: ' + err.message);
+  }
+};
+
+document.getElementById('btn-copy-invite').onclick=()=>{
+  const code = document.getElementById('invite-code-display').value;
+  navigator.clipboard.writeText(code).then(()=>{
+    document.getElementById('invite-copied-msg').style.display = 'block';
+    setTimeout(()=>{ document.getElementById('invite-copied-msg').style.display = 'none'; }, 2000);
+  });
+};
+
+// Join server - lookup invite code
+let _joinInviteTimeout = null;
+document.getElementById('join-invite-code').addEventListener('input', (e) => {
+  clearTimeout(_joinInviteTimeout);
+  const code = e.target.value.trim();
+  document.getElementById('invite-preview').style.display = 'none';
+  document.getElementById('invite-error').style.display = 'none';
+  if(code.length < 4) return;
+  _joinInviteTimeout = setTimeout(async()=>{
+    try {
+      const info = await api(`/invites/${code}`);
+      document.getElementById('invite-srv-name').textContent = info.server_name;
+      document.getElementById('invite-srv-members').textContent = `${info.member_count} members`;
+      const iconEl = document.getElementById('invite-srv-icon');
+      if(info.icon_img) {
+        iconEl.innerHTML = `<img src="${info.icon_img}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;
+      } else {
+        iconEl.textContent = info.server_name[0];
+      }
+      if(info.already_member) {
+        document.getElementById('invite-error').textContent = 'You are already a member of this server';
+        document.getElementById('invite-error').style.display = 'block';
+      }
+      document.getElementById('invite-preview').style.display = 'block';
+    } catch(err) {
+      document.getElementById('invite-error').textContent = 'Invalid invite code';
+      document.getElementById('invite-error').style.display = 'block';
+    }
+  }, 400);
+});
+
+document.getElementById('btn-do-joinsrv').onclick=async()=>{
+  const code = document.getElementById('join-invite-code').value.trim();
+  if(!code) return;
+  try {
+    const result = await api(`/invites/${code}/join`, { method:'POST' });
+    const srv = result.server;
+    const channels = result.channels;
+
+    S.servers.push({
+      id: srv.id,
+      name: srv.name,
+      icon: srv.icon || srv.name[0],
+      iconImg: srv.icon_img || '',
+      banner: srv.banner || '',
+      isAdmin: false,
+      defChBg: srv.def_ch_bg || '',
+      aesthetics: srv.aesthetics || {
+        bg:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950',
+        text:'#c9d1d9', border:'#30363d', sidebarStyle:'solid',
+        sidebarGrad1:'#161b22', sidebarGrad2:'#1c2333'
+      },
+      channels: channels.map(ch => ({
+        id: ch.id, name: ch.name, desc: ch.description || '',
+        type:'ch', bg: ch.background || '', msgs:[]
+      })),
+      dms: []
+    });
+
+    S.srvId = srv.id;
+    S.chId = channels[0]?.id;
+    S.view = 'server';
+    closeM('m-joinsrv');
+    renderAll();
+  } catch(err) {
+    document.getElementById('invite-error').textContent = err.message || 'Failed to join server';
+    document.getElementById('invite-error').style.display = 'block';
+  }
+};
+
 
 
 /* ─── EDIT CHANNEL ─── */
@@ -3479,29 +3664,78 @@ document.getElementById('btn-chbg').onclick=()=>{
   const c=ch();if(!c)return;
   document.getElementById('chbg-title').textContent=c.type==='dm'?'🖼️ DM Background':'🖼️ Channel Background';
   document.getElementById('chbg-desc').textContent=c.type==='dm'?'Set a shared background. Both users can change it.':'Set a custom background for this channel.';
-  setPreview('ub-chbg',c.bg||'');S.pendingChBg=null;
+  setPreview('ub-chbg',c.bg||'');S.pendingChBg=null;S.pendingChBgFile=null;
   openM('m-chbg');
 };
 document.getElementById('ub-chbg').querySelector('input').onchange=async function(e){
   const f=e.target.files[0];if(!f)return;
+  S.pendingChBgFile=f;
   S.pendingChBg=await readF(f);setPreview('ub-chbg',S.pendingChBg);
 };
-document.getElementById('btn-save-chbg').onclick=()=>{
+document.getElementById('btn-save-chbg').onclick=async()=>{
   const c=ch();if(!c)return;
-  if(S.pendingChBg)c.bg=S.pendingChBg;
-  S.pendingChBg=null;closeM('m-chbg');renderBg();autoSave();
+  try {
+    let bgUrl = '';
+    if(S.pendingChBgFile) {
+      bgUrl = await uploadFileToS3(S.pendingChBgFile);
+    } else if(S.pendingChBg) {
+      bgUrl = S.pendingChBg;
+    }
+    if(!bgUrl) { S.pendingChBg=null;S.pendingChBgFile=null;closeM('m-chbg');return; }
+
+    c.bg = bgUrl;
+
+    if(c.type === 'dm' && ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type:'dm_bg_change', dmChannelId:c.id, background:bgUrl }));
+    } else if(c.type !== 'dm' && ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type:'channel_bg_change', channelId:c.id, background:bgUrl }));
+    }
+  } catch(err) {
+    console.error('Failed to set background:', err);
+  }
+  S.pendingChBg=null;S.pendingChBgFile=null;closeM('m-chbg');renderBg();autoSave();
 };
 document.getElementById('btn-rm-chbg').onclick=()=>{
-  const c=ch();if(c)c.bg='';S.pendingChBg=null;closeM('m-chbg');renderBg();autoSave();
+  const c=ch();if(!c)return;
+  c.bg='';
+
+  if(c.type === 'dm' && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type:'dm_bg_change', dmChannelId:c.id, background:'' }));
+  } else if(c.type !== 'dm' && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type:'channel_bg_change', channelId:c.id, background:'' }));
+  }
+  S.pendingChBg=null;S.pendingChBgFile=null;closeM('m-chbg');renderBg();autoSave();
 };
 
 /* ─── MEMBERS ─── */
-document.getElementById('btn-members').onclick=()=>{
+document.getElementById('btn-members').onclick=async()=>{
   const list=document.getElementById('members-list');list.innerHTML='';
-  list.innerHTML+=memRow('me',true);
-  S.users.forEach(u=>list.innerHTML+=memRow(u.id,false));
+
+  if(S.view === 'server' && typeof S.srvId === 'number') {
+    // Fetch actual server members from API
+    try {
+      const members = await api(`/servers/${S.srvId}/members`);
+      members.forEach(m => {
+        const isMe = m.user_id === S.me.id;
+        upsertUser({
+          id: m.user_id,
+          name: m.display_name || m.username,
+          color: m.color,
+          accent: m.accent,
+          avatar: m.avatar
+        });
+        list.innerHTML += memRow(isMe ? 'me' : m.user_id, isMe);
+      });
+    } catch(err) {
+      console.error('Failed to load members:', err);
+      list.innerHTML += memRow('me', true);
+    }
+  } else {
+    list.innerHTML+=memRow('me',true);
+    S.users.forEach(u=>list.innerHTML+=memRow(u.id,false));
+  }
+
   openM('m-members');
-  // wire clicks after render
   requestAnimationFrame(()=>{
     document.querySelectorAll('.mem-av[data-uid]').forEach(el=>el.addEventListener('click',e=>showPC(e,el.dataset.uid)));
     document.querySelectorAll('.mem-name[data-uid]').forEach(el=>el.addEventListener('click',e=>showPC(e,el.dataset.uid)));
@@ -3662,7 +3896,7 @@ async function handleAuth() {
       S.personalUI = serverUI;
 
       await loadUserData();
-      await loadDMsFromDatabase(); // Load DMs once after login
+      await loadDMsFromDatabase();
       ensureGalleryDefaults();
 
       document.getElementById('login-screen').style.display = 'none';
@@ -3775,7 +4009,6 @@ async function openGallery(uid){
 
   S.currentGalleryUserId = uid;
 
-  // Fetch fresh data for other users
   let u;
   if (uid === 'me') {
     u = S.me;
@@ -3785,11 +4018,9 @@ async function openGallery(uid){
     u = U(uid);
   }
 
-  // Ensure gallery exists with defaults
-  if (!u.gallery) {
-    u.gallery = { items:[], bg:'', bgColor:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d' };
-  }
+  // Ensure gallery defaults
   const defaultGal = { items:[], bg:'', bgColor:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d' };
+  if (!u.gallery) u.gallery = defaultGal;
   u.gallery = { ...defaultGal, ...u.gallery };
   const gal = u.gallery;
 
@@ -4116,6 +4347,51 @@ function initWebSocket() {
                 case 'error':
                     console.error('WebSocket error:', data.message);
                     break;
+
+                case 'dm_bg_changed': {
+                    const homeServer = S.servers.find(s => s.id === 'home');
+                    if (homeServer) {
+                        const dm = homeServer.dms.find(d => d.id === data.dmChannelId);
+                        if (dm) {
+                            dm.bg = data.background || '';
+                            const c = ch();
+                            if (c && c.id === data.dmChannelId) renderBg();
+                        }
+                    }
+                    break;
+                }
+
+                case 'channel_bg_changed': {
+                    for (const s of S.servers) {
+                        if (!s.channels) continue;
+                        const chan = s.channels.find(c => c.id === data.channelId);
+                        if (chan) {
+                            chan.bg = data.background || '';
+                            const c = ch();
+                            if (c && c.id === data.channelId) renderBg();
+                            break;
+                        }
+                    }
+                    break;
+                }
+
+                case 'server_aesthetics_updated': {
+                    const s = S.servers.find(sv => sv.id === data.serverId);
+                    if (s) {
+                        if (data.aesthetics) s.aesthetics = data.aesthetics;
+                        if (data.name) s.name = data.name;
+                        if (data.iconImg !== undefined) s.iconImg = data.iconImg;
+                        if (data.banner !== undefined) s.banner = data.banner;
+                        if (data.defChBg !== undefined) s.defChBg = data.defChBg;
+                        // Re-render if viewing this server (respects personal override)
+                        if (S.srvId === data.serverId) {
+                            renderAll();
+                        } else {
+                            renderRail();
+                        }
+                    }
+                    break;
+                }
             }
         } catch (err) {
             console.error('Error parsing WebSocket message:', err);
@@ -4616,5 +4892,6 @@ async function openDMWithUser(userId) {
 </script>
 </body>
 </html>
+
 
 
