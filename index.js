@@ -358,6 +358,21 @@ wss.on('connection', (ws, req) => {
                 }
             }
 
+            // PROFILE UPDATE BROADCAST
+            if (message.type === 'profile_update') {
+                const { user } = message;
+                // Broadcast to all connected users except sender
+                activeConnections.forEach((connection, connUserId) => {
+                    if (connUserId !== userId && connection.readyState === ws.OPEN) {
+                        connection.send(JSON.stringify({
+                            type: 'profile_updated',
+                            user: user
+                        }));
+                    }
+                });
+                console.log(`Profile update broadcast from ${username}`);
+            }
+
             // TYPING INDICATOR
             if (message.type === 'typing') {
                 const { channelId, isDM, dmChannelId } = message;
@@ -1562,3 +1577,4 @@ server.listen(PORT, () => {
     console.log(`WebSocket server ready`);
     console.log(`AWS S3 configured for bucket: ${S3_BUCKET}`);
 });
+
