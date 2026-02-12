@@ -100,3 +100,15 @@ CREATE INDEX IF NOT EXISTS idx_dm_messages_channel ON dm_messages(dm_channel_id)
 CREATE INDEX IF NOT EXISTS idx_server_members_server ON server_members(server_id);
 CREATE INDEX IF NOT EXISTS idx_server_members_user ON server_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_channels_server ON channels(server_id);
+
+-- Server invites table
+CREATE TABLE IF NOT EXISTS server_invites (
+    id SERIAL PRIMARY KEY,
+    server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
+    code VARCHAR(20) UNIQUE NOT NULL,
+    created_by INTEGER REFERENCES users(id),
+    uses INTEGER DEFAULT 0,
+    max_uses INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
