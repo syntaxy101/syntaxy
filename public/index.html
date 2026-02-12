@@ -1375,8 +1375,23 @@ async function loadDMsFromDatabase() {
         userId: otherUserId,
         type: 'dm',
         bg: '',
-        msgs: [] // Messages loaded when DM is opened
+        msgs: []
       });
+
+      // Add user to S.users so U() can find them
+      if (!S.users.find(u => u.id === otherUserId)) {
+        const otherAvatar = dm.user1_id === S.me.id ? dm.user2_avatar : dm.user1_avatar;
+        const otherColor = dm.user1_id === S.me.id ? dm.user2_color : dm.user1_color;
+        S.users.push({
+          id: otherUserId,
+          name: otherDisplayName || otherUsername,
+          color: otherColor || '#58a6ff',
+          accent: '#3fb950',
+          avatar: otherAvatar || '',
+          banner: '',
+          bio: ''
+        });
+      }
     }
 
     renderSidebar();
@@ -2105,6 +2120,20 @@ async function renderMsgs(){
         : `/channels/${c.id}/messages`;
 
       const messages = await api(endpoint);
+      // Register message authors in S.users
+      messages.forEach(m => {
+        if (m.user_id !== S.me.id && !S.users.find(u => u.id === m.user_id)) {
+          S.users.push({
+            id: m.user_id,
+            name: m.display_name || m.username,
+            color: m.color || '#58a6ff',
+            accent: m.accent || '#3fb950',
+            avatar: m.avatar || '',
+            banner: '',
+            bio: ''
+          });
+        }
+      });
       c.msgs = messages.map(m => ({
         id: m.id,
         uid: m.user_id === S.me.id ? 'me' : m.user_id,
@@ -4053,6 +4082,19 @@ function sendTypingIndicator(channelId, isDM, dmChannelId) {
 }
 
 function handleNewChannelMessage(channelId, message) {
+    // Register sender in S.users
+    if (message.user_id !== S.me.id && !S.users.find(u => u.id === message.user_id)) {
+      S.users.push({
+        id: message.user_id,
+        name: message.display_name || message.username,
+        color: message.color || '#58a6ff',
+        accent: message.accent || '#3fb950',
+        avatar: message.avatar || '',
+        banner: '',
+        bio: ''
+      });
+    }
+
     const c = ch();
     if (!c || c.id !== channelId) return;
 
@@ -4074,6 +4116,19 @@ function handleNewChannelMessage(channelId, message) {
 }
 
 function handleNewDMMessage(dmChannelId, message) {
+    // Register sender in S.users
+    if (message.user_id !== S.me.id && !S.users.find(u => u.id === message.user_id)) {
+      S.users.push({
+        id: message.user_id,
+        name: message.display_name || message.username,
+        color: message.color || '#58a6ff',
+        accent: message.accent || '#3fb950',
+        avatar: message.avatar || '',
+        banner: '',
+        bio: ''
+      });
+    }
+
     const c = ch();
     if (!c || c.id !== dmChannelId) return;
 
@@ -4450,3 +4505,4 @@ async function openDMWithUser(userId) {
 </script>
 </body>
 </html>
+
