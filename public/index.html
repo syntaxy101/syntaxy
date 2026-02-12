@@ -1378,20 +1378,15 @@ async function loadDMsFromDatabase() {
         msgs: []
       });
 
-      // Add user to S.users so U() can find them
-      if (!S.users.find(u => u.id === otherUserId)) {
-        const otherAvatar = dm.user1_id === S.me.id ? dm.user2_avatar : dm.user1_avatar;
-        const otherColor = dm.user1_id === S.me.id ? dm.user2_color : dm.user1_color;
-        S.users.push({
-          id: otherUserId,
-          name: otherDisplayName || otherUsername,
-          color: otherColor || '#58a6ff',
-          accent: '#3fb950',
-          avatar: otherAvatar || '',
-          banner: '',
-          bio: ''
-        });
-      }
+    // Add/update user so U() has fresh data
+      const otherAvatar = dm.user1_id === S.me.id ? dm.user2_avatar : dm.user1_avatar;
+      const otherColor = dm.user1_id === S.me.id ? dm.user2_color : dm.user1_color;
+      upsertUser({
+        id: otherUserId,
+        name: otherDisplayName || otherUsername,
+        color: otherColor || '#58a6ff',
+        avatar: otherAvatar || ''
+      });
     }
 
     renderSidebar();
@@ -1716,6 +1711,21 @@ async function syncProfileToServer() {
       }
     });
     console.log('Profile synced to server');
+    // Notify other users via WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'profile_update',
+        user: {
+          id: S.me.id,
+          display_name: S.me.name,
+          color: S.me.color,
+          accent: S.me.accent,
+          avatar: S.me.avatar,
+          banner: S.me.banner,
+          bio: S.me.bio
+        }
+      }));
+    }
   } catch(e) {
     console.warn('Failed to sync profile:', e);
   }
@@ -1852,6 +1862,29 @@ initApp();
 function T(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 
 /* ─── HELPERS ─── */
+function upsertUser(userData) {
+  if (!userData || userData.id === S.me.id) return;
+  const existing = S.users.find(u => u.id === userData.id);
+  if (existing) {
+    existing.name = userData.name || existing.name;
+    existing.color = userData.color || existing.color;
+    existing.accent = userData.accent || existing.accent;
+    existing.avatar = userData.avatar !== undefined ? userData.avatar : existing.avatar;
+    existing.banner = userData.banner !== undefined ? userData.banner : existing.banner;
+    existing.bio = userData.bio !== undefined ? userData.bio : existing.bio;
+  } else {
+    S.users.push({
+      id: userData.id,
+      name: userData.name || 'User',
+      color: userData.color || '#58a6ff',
+      accent: userData.accent || '#3fb950',
+      avatar: userData.avatar || '',
+      banner: userData.banner || '',
+      bio: userData.bio || ''
+    });
+  }
+}
+
 function U(id) {
   if (id === 'me') return S.me;
 
@@ -2121,19 +2154,15 @@ async function renderMsgs(){
         : `/channels/${c.id}/messages`;
 
       const messages = await api(endpoint);
-      // Register message authors in S.users
+    // Add/update message authors with latest data
       messages.forEach(m => {
-        if (m.user_id !== S.me.id && !S.users.find(u => u.id === m.user_id)) {
-          S.users.push({
-            id: m.user_id,
-            name: m.display_name || m.username,
-            color: m.color || '#58a6ff',
-            accent: m.accent || '#3fb950',
-            avatar: m.avatar || '',
-            banner: '',
-            bio: ''
-          });
-        }
+        upsertUser({
+          id: m.user_id,
+          name: m.display_name || m.username,
+          color: m.color,
+          accent: m.accent,
+          avatar: m.avatar
+        });
       });
       c.msgs = messages.map(m => ({
         id: m.id,
@@ -3995,6 +4024,22 @@ function initWebSocket() {
                     handleTypingIndicator(data);
                     break;
 
+                    case 'profile_updated':
+                    upsertUser({
+                      id: data.user.id,
+                      name: data.user.display_name || data.user.username,
+                      color: data.user.color,
+                      accent: data.user.accent,
+                      avatar: data.user.avatar,
+                      banner: data.user.banner,
+                      bio: data.user.bio
+                    });
+                    // Re-render to show updated profile everywhere
+                    lastRenderedChId = null;
+                    renderMsgs();
+                    renderSidebar();
+                    break;
+
                 case 'error':
                     console.error('WebSocket error:', data.message);
                     break;
@@ -4083,18 +4128,14 @@ function sendTypingIndicator(channelId, isDM, dmChannelId) {
 }
 
 function handleNewChannelMessage(channelId, message) {
-    // Register sender in S.users
-    if (message.user_id !== S.me.id && !S.users.find(u => u.id === message.user_id)) {
-      S.users.push({
-        id: message.user_id,
-        name: message.display_name || message.username,
-        color: message.color || '#58a6ff',
-        accent: message.accent || '#3fb950',
-        avatar: message.avatar || '',
-        banner: '',
-        bio: ''
-      });
-    }
+  // Add/update sender with latest data
+    upsertUser({
+      id: message.user_id,
+      name: message.display_name || message.username,
+      color: message.color,
+      accent: message.accent,
+      avatar: message.avatar
+    });
 
     const c = ch();
     if (!c || c.id !== channelId) return;
@@ -4117,18 +4158,14 @@ function handleNewChannelMessage(channelId, message) {
 }
 
 function handleNewDMMessage(dmChannelId, message) {
-    // Register sender in S.users
-    if (message.user_id !== S.me.id && !S.users.find(u => u.id === message.user_id)) {
-      S.users.push({
-        id: message.user_id,
-        name: message.display_name || message.username,
-        color: message.color || '#58a6ff',
-        accent: message.accent || '#3fb950',
-        avatar: message.avatar || '',
-        banner: '',
-        bio: ''
-      });
-    }
+  // Add/update sender with latest data
+    upsertUser({
+      id: message.user_id,
+      name: message.display_name || message.username,
+      color: message.color,
+      accent: message.accent,
+      avatar: message.avatar
+    });
 
     const c = ch();
     if (!c || c.id !== dmChannelId) return;
@@ -4506,5 +4543,4 @@ async function openDMWithUser(userId) {
 </script>
 </body>
 </html>
-
 
