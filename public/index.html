@@ -3674,25 +3674,26 @@ document.getElementById('ub-chbg').querySelector('input').onchange=async functio
 };
 document.getElementById('btn-save-chbg').onclick=async()=>{
   const c=ch();if(!c)return;
-  try {
-    let bgUrl = '';
-    if(S.pendingChBgFile) {
+  let bgUrl = S.pendingChBg || '';
+
+  if(S.pendingChBgFile) {
+    try {
       bgUrl = await uploadFileToS3(S.pendingChBgFile);
-    } else if(S.pendingChBg) {
-      bgUrl = S.pendingChBg;
+    } catch(err) {
+      console.warn('S3 upload failed, using base64:', err);
     }
-    if(!bgUrl) { S.pendingChBg=null;S.pendingChBgFile=null;closeM('m-chbg');return; }
-
-    c.bg = bgUrl;
-
-    if(c.type === 'dm' && ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type:'dm_bg_change', dmChannelId:c.id, background:bgUrl }));
-    } else if(c.type !== 'dm' && ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type:'channel_bg_change', channelId:c.id, background:bgUrl }));
-    }
-  } catch(err) {
-    console.error('Failed to set background:', err);
   }
+
+  if(!bgUrl) { S.pendingChBg=null;S.pendingChBgFile=null;closeM('m-chbg');return; }
+
+  c.bg = bgUrl;
+
+  if(c.type === 'dm' && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type:'dm_bg_change', dmChannelId:c.id, background:bgUrl }));
+  } else if(c.type !== 'dm' && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type:'channel_bg_change', channelId:c.id, background:bgUrl }));
+  }
+
   S.pendingChBg=null;S.pendingChBgFile=null;closeM('m-chbg');renderBg();autoSave();
 };
 document.getElementById('btn-rm-chbg').onclick=()=>{
@@ -4421,6 +4422,24 @@ function sendMessageViaWebSocket(channelId, text, image = null, reply_to = null,
         return sendMessageViaHTTP(channelId, text, image, reply_to, isDM, dmChannelId);
     }
 
+    // Optimistic local insert — show message instantly
+    const c = ch();
+    if (c) {
+        const tempId = 'temp_' + Date.now();
+        c.msgs.push({
+            id: tempId,
+            uid: 'me',
+            text: text || '',
+            img: image || null,
+            reply: reply_to,
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+            edited: false,
+            reactions: {},
+            _temp: true
+        });
+        renderMsgs();
+    }
+
     ws.send(JSON.stringify({
         type: 'new_message',
         channelId: channelId,
@@ -4489,6 +4508,12 @@ function handleNewChannelMessage(channelId, message) {
     const c = ch();
     if (!c || c.id !== channelId) return;
 
+    // Remove optimistic temp message if this is our own echo
+    if (message.user_id === S.me.id) {
+        const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
+        if (tempIdx > -1) c.msgs.splice(tempIdx, 1);
+    }
+
     c.msgs.push({
         id: message.id,
         uid: message.user_id === S.me.id ? 'me' : message.user_id,
@@ -4499,7 +4524,8 @@ function handleNewChannelMessage(channelId, message) {
         edited: message.edited,
         reactions: message.reactions || {},
         username: message.username,
-        userColor: message.color || '#58a6ff'
+        userColor: message.color || '#58a6ff',
+        sys: message.is_system || false
     });
 
     renderMsgs();
@@ -4519,6 +4545,12 @@ function handleNewDMMessage(dmChannelId, message) {
     const c = ch();
     if (!c || c.id !== dmChannelId) return;
 
+  // Remove optimistic temp message if this is our own echo
+    if (message.user_id === S.me.id) {
+        const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
+        if (tempIdx > -1) c.msgs.splice(tempIdx, 1);
+    }
+
     c.msgs.push({
         id: message.id,
         uid: message.user_id === S.me.id ? 'me' : message.user_id,
@@ -4529,7 +4561,8 @@ function handleNewDMMessage(dmChannelId, message) {
         edited: message.edited,
         reactions: message.reactions || {},
         username: message.username,
-        userColor: message.color || '#58a6ff'
+        userColor: message.color || '#58a6ff',
+        sys: message.is_system || false
     });
 
     renderMsgs();
