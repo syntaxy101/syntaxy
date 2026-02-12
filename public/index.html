@@ -2487,6 +2487,9 @@ async function showPC(e,uid){
   // Close any open modals (like members list)
   document.querySelectorAll('.ov.show').forEach(m => m.classList.remove('show'));
 
+  // Parse string IDs to numbers (dataset attributes are always strings)
+  if (uid !== 'me' && !isNaN(uid)) uid = Number(uid);
+
   // Fetch fresh profile data from API for other users
   let u;
   if (uid === 'me') {
@@ -3746,6 +3749,9 @@ document.getElementById('btn-logout').onclick = () => {
 
 /* ─── GALLERY ─── */
 async function openGallery(uid){
+  // Parse string IDs to numbers
+  if (uid !== 'me' && !isNaN(uid)) uid = Number(uid);
+
   S.currentGalleryUserId = uid;
 
   // Fetch fresh data for other users
@@ -4588,4 +4594,5 @@ async function openDMWithUser(userId) {
 </script>
 </body>
 </html>
+
 
