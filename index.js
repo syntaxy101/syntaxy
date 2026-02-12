@@ -550,8 +550,8 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, username, display_name, color, accent, bio, avatar, banner, gallery, personal_ui FROM users WHERE id = $1',
-            [req.user.id]
+            'SELECT id, username, display_name, color, accent, bio, avatar, banner, gallery FROM users WHERE id = $1',
+            [req.params.id]
         );
 
         if (result.rows.length === 0) {
