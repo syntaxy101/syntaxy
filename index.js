@@ -80,6 +80,20 @@ const upload = multer({
     try {
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS gallery JSONB DEFAULT '{}'`);
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_ui JSONB DEFAULT '{}'`);
+        
+        // Server invites table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS server_invites (
+                id SERIAL PRIMARY KEY,
+                server_id INTEGER REFERENCES servers(id) ON DELETE CASCADE,
+                code VARCHAR(20) UNIQUE NOT NULL,
+                created_by INTEGER REFERENCES users(id),
+                uses INTEGER DEFAULT 0,
+                max_uses INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        
         console.log('Migration check complete');
     } catch (err) {
         console.error('Migration error:', err);
@@ -371,6 +385,132 @@ wss.on('connection', (ws, req) => {
                     }
                 });
                 console.log(`Profile update broadcast from ${username}`);
+            }
+
+            // DM BACKGROUND CHANGE
+            if (message.type === 'dm_bg_change') {
+                const { dmChannelId, background } = message;
+                
+                // Save to database
+                await pool.query(
+                    'UPDATE dm_channels SET background = $1 WHERE id = $2',
+                    [background || '', dmChannelId]
+                );
+                
+                // Insert system message
+                const sysMsg = await pool.query(
+                    `INSERT INTO dm_messages (dm_channel_id, user_id, text, image, reply_to, created_at)
+                    VALUES ($1, $2, $3, NULL, NULL, NOW())
+                    RETURNING *`,
+                    [dmChannelId, userId, background ? '📷 changed the chat background' : '🗑️ removed the chat background']
+                );
+                
+                const fullSysMsg = await pool.query(
+                    `SELECT m.*, u.username, u.display_name, u.color, u.accent, u.avatar
+                    FROM dm_messages m JOIN users u ON m.user_id = u.id WHERE m.id = $1`,
+                    [sysMsg.rows[0].id]
+                );
+                
+                // Get both users
+                const dmInfo = await pool.query(
+                    'SELECT user1_id, user2_id FROM dm_channels WHERE id = $1',
+                    [dmChannelId]
+                );
+                
+                if (dmInfo.rows.length > 0) {
+                    const otherUserId = dmInfo.rows[0].user1_id === userId
+                        ? dmInfo.rows[0].user2_id
+                        : dmInfo.rows[0].user1_id;
+                    
+                    // Broadcast to both users
+                    [userId, otherUserId].forEach(id => {
+                        const connection = activeConnections.get(id);
+                        if (connection && connection.readyState === ws.OPEN) {
+                            connection.send(JSON.stringify({
+                                type: 'dm_bg_changed',
+                                dmChannelId: dmChannelId,
+                                background: background || '',
+                                changedBy: username
+                            }));
+                            // Also send the system message
+                            connection.send(JSON.stringify({
+                                type: 'dm_message',
+                                dmChannelId: dmChannelId,
+                                message: fullSysMsg.rows[0]
+                            }));
+                        }
+                    });
+                }
+                console.log(`DM background changed by ${username}`);
+            }
+
+            // CHANNEL BACKGROUND CHANGE
+            if (message.type === 'channel_bg_change') {
+                const { channelId, background } = message;
+                
+                await pool.query(
+                    'UPDATE channels SET background = $1 WHERE id = $2',
+                    [background || '', channelId]
+                );
+                
+                // Broadcast to all server members
+                const serverMembers = await pool.query(
+                    `SELECT DISTINCT sm.user_id
+                    FROM server_members sm
+                    JOIN channels c ON c.server_id = sm.server_id
+                    WHERE c.id = $1`,
+                    [channelId]
+                );
+                
+                serverMembers.rows.forEach(member => {
+                    const connection = activeConnections.get(member.user_id);
+                    if (connection && connection.readyState === ws.OPEN) {
+                        connection.send(JSON.stringify({
+                            type: 'channel_bg_changed',
+                            channelId: channelId,
+                            background: background || ''
+                        }));
+                    }
+                });
+            }
+
+            // SERVER AESTHETICS UPDATE
+            if (message.type === 'server_aesthetics_update') {
+                const { serverId, aesthetics, name, iconImg, banner, defChBg } = message;
+                
+                // Save to database
+                await pool.query(
+                    `UPDATE servers SET 
+                        aesthetics = COALESCE($1, aesthetics),
+                        name = COALESCE($2, name),
+                        icon_img = COALESCE($3, icon_img),
+                        banner = COALESCE($4, banner),
+                        def_ch_bg = COALESCE($5, def_ch_bg)
+                    WHERE id = $6`,
+                    [aesthetics ? JSON.stringify(aesthetics) : null, name, iconImg, banner, defChBg, serverId]
+                );
+                
+                // Broadcast to all server members
+                const members = await pool.query(
+                    'SELECT user_id FROM server_members WHERE server_id = $1',
+                    [serverId]
+                );
+                
+                members.rows.forEach(member => {
+                    const connection = activeConnections.get(member.user_id);
+                    if (connection && connection.readyState === ws.OPEN) {
+                        connection.send(JSON.stringify({
+                            type: 'server_aesthetics_updated',
+                            serverId: serverId,
+                            aesthetics: aesthetics,
+                            name: name,
+                            iconImg: iconImg,
+                            banner: banner,
+                            defChBg: defChBg
+                        }));
+                    }
+                });
+                console.log(`Server aesthetics updated by ${username}`);
             }
 
             // TYPING INDICATOR
@@ -1183,7 +1323,7 @@ app.post('/api/servers/:id/leave', authenticateToken, async (req, res) => {
 app.get('/api/servers/:id/members', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT u.id, u.username, u.display_name, u.avatar, u.color, sm.is_admin, sm.joined_at
+            `SELECT u.id as user_id, u.username, u.display_name, u.avatar, u.color, u.accent, sm.is_admin, sm.joined_at
             FROM users u
             JOIN server_members sm ON u.id = sm.user_id
             WHERE sm.server_id = $1
@@ -1194,6 +1334,125 @@ app.get('/api/servers/:id/members', authenticateToken, async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error('Get server members error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// ============================================
+// SERVER INVITE ROUTES
+// ============================================
+
+// Generate invite code
+app.post('/api/servers/:id/invites', authenticateToken, async (req, res) => {
+    try {
+        const memberCheck = await pool.query(
+            'SELECT is_admin FROM server_members WHERE server_id = $1 AND user_id = $2',
+            [req.params.id, req.user.id]
+        );
+        if (memberCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Not a member' });
+        }
+        
+        // Generate a random 8-char code
+        const code = crypto.randomBytes(4).toString('hex');
+        
+        const result = await pool.query(
+            `INSERT INTO server_invites (server_id, code, created_by, created_at)
+            VALUES ($1, $2, $3, NOW())
+            RETURNING *`,
+            [req.params.id, code, req.user.id]
+        );
+        
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Create invite error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get server info from invite code
+app.get('/api/invites/:code', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT si.*, s.name as server_name, s.icon, s.icon_img, s.banner,
+                (SELECT COUNT(*) FROM server_members WHERE server_id = s.id) as member_count
+            FROM server_invites si
+            JOIN servers s ON si.server_id = s.id
+            WHERE si.code = $1`,
+            [req.params.code]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Invalid invite code' });
+        }
+        
+        const invite = result.rows[0];
+        
+        // Check if already a member
+        const memberCheck = await pool.query(
+            'SELECT id FROM server_members WHERE server_id = $1 AND user_id = $2',
+            [invite.server_id, req.user.id]
+        );
+        
+        res.json({
+            ...invite,
+            already_member: memberCheck.rows.length > 0
+        });
+    } catch (err) {
+        console.error('Get invite error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Join server via invite code
+app.post('/api/invites/:code/join', authenticateToken, async (req, res) => {
+    try {
+        const invite = await pool.query(
+            `SELECT si.*, s.name as server_name FROM server_invites si
+            JOIN servers s ON si.server_id = s.id
+            WHERE si.code = $1`,
+            [req.params.code]
+        );
+        
+        if (invite.rows.length === 0) {
+            return res.status(404).json({ error: 'Invalid invite code' });
+        }
+        
+        const serverId = invite.rows[0].server_id;
+        
+        // Check if already a member
+        const memberCheck = await pool.query(
+            'SELECT id FROM server_members WHERE server_id = $1 AND user_id = $2',
+            [serverId, req.user.id]
+        );
+        
+        if (memberCheck.rows.length > 0) {
+            return res.status(400).json({ error: 'Already a member' });
+        }
+        
+        // Join
+        await pool.query(
+            `INSERT INTO server_members (server_id, user_id, is_admin, joined_at)
+            VALUES ($1, $2, false, NOW())`,
+            [serverId, req.user.id]
+        );
+        
+        // Increment uses
+        await pool.query(
+            'UPDATE server_invites SET uses = uses + 1 WHERE id = $1',
+            [invite.rows[0].id]
+        );
+        
+        // Return full server data
+        const server = await pool.query('SELECT * FROM servers WHERE id = $1', [serverId]);
+        const channels = await pool.query(
+            'SELECT * FROM channels WHERE server_id = $1 ORDER BY created_at',
+            [serverId]
+        );
+        
+        res.json({ server: server.rows[0], channels: channels.rows });
+    } catch (err) {
+        console.error('Join via invite error:', err);
         res.status(500).json({ error: 'Server error' });
     }
 });
