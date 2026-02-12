@@ -1827,6 +1827,7 @@ async function initApp() {
 
   if (isLoggedIn) {
     loginScreen.style.display = 'none';
+    await loadDMsFromDatabase(); // Load DMs once at startup
     renderAll();
     initWebSocket(); // Connect WebSocket on page load
   } else {
@@ -1862,9 +1863,20 @@ initApp();
 function T(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 
 /* ─── HELPERS ─── */
+// Cache for fetchFullUser - avoid repeated API calls
+const _userFetchCache = {}; // { oderId: timestamp }
+const USER_CACHE_TTL = 60000; // 60 seconds
+
 async function fetchFullUser(uid) {
+  // Return cached if recently fetched
+  const now = Date.now();
+  const cached = U(uid);
+  if (_userFetchCache[uid] && (now - _userFetchCache[uid] < USER_CACHE_TTL) && cached.name !== 'User') {
+    return cached;
+  }
   try {
     const data = await api(`/users/${uid}`);
+    _userFetchCache[uid] = now;
     upsertUser({
       id: data.id,
       name: data.display_name || data.username,
@@ -1878,7 +1890,7 @@ async function fetchFullUser(uid) {
     return U(uid);
   } catch (err) {
     console.error('Failed to fetch user:', err);
-    return U(uid);
+    return cached;
   }
 }
 
@@ -1892,7 +1904,6 @@ function upsertUser(userData) {
     existing.avatar = userData.avatar !== undefined ? userData.avatar : existing.avatar;
     existing.banner = userData.banner !== undefined ? userData.banner : existing.banner;
     existing.bio = userData.bio !== undefined ? userData.bio : existing.bio;
-    if (userData.gallery) existing.gallery = userData.gallery;
   } else {
     S.users.push({
       id: userData.id,
@@ -1901,8 +1912,7 @@ function upsertUser(userData) {
       accent: userData.accent || '#3fb950',
       avatar: userData.avatar || '',
       banner: userData.banner || '',
-      bio: userData.bio || '',
-      gallery: userData.gallery || { items:[], bg:'', bgColor:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d' }
+      bio: userData.bio || ''
     });
   }
 }
@@ -2082,9 +2092,7 @@ function renderSidebar(){
   // Hide server settings button in DMs
   document.getElementById('btn-srv-set').style.display='none';
 
-  // LOAD DMs FROM DATABASE
-  loadDMsFromDatabase();
-
+  // DMs are loaded once at login/init, not on every render
   const homeServer = S.servers.find(srv => srv.id === 'home');
   const dmList = homeServer ? homeServer.dms : [];
   // ADD SEARCH USERS BUTTON
@@ -2163,13 +2171,15 @@ function renderBg(){
 }
 
 let lastRenderedChId = null;
+const _loadedChannels = new Set(); // Track channels we've already fetched messages for
 
 async function renderMsgs(){
   const c=ch(); if(!c) return;
   const wrap=document.getElementById('messages-wrap');
 
-  // Load messages from API if channel/DM has no messages yet
-  if (c.msgs.length === 0 && typeof c.id === 'number') {
+  // Load messages from API if channel/DM hasn't been loaded yet
+  if (!_loadedChannels.has(c.id) && typeof c.id === 'number') {
+    _loadedChannels.add(c.id); // Mark as loading to prevent duplicate fetches
     try {
       const endpoint = c.type === 'dm'
         ? `/dms/${c.id}/messages`
@@ -2200,6 +2210,7 @@ async function renderMsgs(){
       }));
     } catch (err) {
       console.error('Failed to load messages:', err);
+      _loadedChannels.delete(c.id); // Allow retry on failure
     }
   }
 
@@ -2315,9 +2326,6 @@ function renderAll(){
   renderSidebar();
   renderHeader();
   renderBg();
-
-  // Force channel switch detection on full render
-  lastRenderedChId = null;
   renderMsgs();
 }
 
@@ -2490,14 +2498,12 @@ async function showPC(e,uid){
   // Parse string IDs to numbers (dataset attributes are always strings)
   if (uid !== 'me' && !isNaN(uid)) uid = Number(uid);
 
-  // Fetch fresh profile data from API for other users
+  // For other users, show card immediately with cached data, then refresh
   let u;
   if (uid === 'me') {
     u = S.me;
-  } else if (typeof uid === 'number') {
-    u = await fetchFullUser(uid);
   } else {
-    u = U(uid);
+    u = U(uid); // Use cached data first for instant display
   }
   const card=document.getElementById('profile-card');
 
@@ -2626,6 +2632,20 @@ async function showPC(e,uid){
     if(t<0)t=10;
     card.style.left=l+'px';card.style.top=t+'px';
   });
+
+  // Background refresh: fetch fresh data from API (non-blocking)
+  if (uid !== 'me' && typeof uid === 'number') {
+    fetchFullUser(uid).then(freshU => {
+      if (card.style.display === 'block') {
+        document.getElementById('pc-av').innerHTML = avHTML(freshU, 76);
+        document.getElementById('pc-name').textContent = freshU.name;
+        document.getElementById('pc-name').style.color = freshU.color || '#58a6ff';
+        document.getElementById('pc-bio').textContent = freshU.bio || 'No bio yet';
+        const freshBanner = document.getElementById('pc-banner');
+        if (freshU.banner) freshBanner.style.background = `url(${freshU.banner}) center/cover`;
+      }
+    });
+  }
 }
 
 function updatePC(uid){
@@ -3642,6 +3662,7 @@ async function handleAuth() {
       S.personalUI = serverUI;
 
       await loadUserData();
+      await loadDMsFromDatabase(); // Load DMs once after login
       ensureGalleryDefaults();
 
       document.getElementById('login-screen').style.display = 'none';
@@ -3764,10 +3785,12 @@ async function openGallery(uid){
     u = U(uid);
   }
 
-  // Ensure gallery exists
+  // Ensure gallery exists with defaults
   if (!u.gallery) {
     u.gallery = { items:[], bg:'', bgColor:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d' };
   }
+  const defaultGal = { items:[], bg:'', bgColor:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d' };
+  u.gallery = { ...defaultGal, ...u.gallery };
   const gal = u.gallery;
 
   // Apply gallery theme
@@ -3790,8 +3813,7 @@ async function openGallery(uid){
   // Hide settings button if not owner
   const settingsBtn = document.getElementById('btn-gallery-settings');
   settingsBtn.style.display = uid === 'me' ? 'block' : 'none';
-  const isOwner = uid === 'me';
-  document.getElementById('gallery-controls').style.display = isOwner ? 'flex' : 'none';
+  document.getElementById('gallery-controls').style.display = uid === 'me' ? 'flex' : 'none';
 
   renderGallery();
   document.getElementById('gallery-page').classList.add('show');
