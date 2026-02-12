@@ -1862,6 +1862,26 @@ initApp();
 function T(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 
 /* ─── HELPERS ─── */
+async function fetchFullUser(uid) {
+  try {
+    const data = await api(`/users/${uid}`);
+    upsertUser({
+      id: data.id,
+      name: data.display_name || data.username,
+      color: data.color,
+      accent: data.accent,
+      avatar: data.avatar,
+      banner: data.banner,
+      bio: data.bio,
+      gallery: data.gallery || {}
+    });
+    return U(uid);
+  } catch (err) {
+    console.error('Failed to fetch user:', err);
+    return U(uid);
+  }
+}
+
 function upsertUser(userData) {
   if (!userData || userData.id === S.me.id) return;
   const existing = S.users.find(u => u.id === userData.id);
@@ -1872,6 +1892,7 @@ function upsertUser(userData) {
     existing.avatar = userData.avatar !== undefined ? userData.avatar : existing.avatar;
     existing.banner = userData.banner !== undefined ? userData.banner : existing.banner;
     existing.bio = userData.bio !== undefined ? userData.bio : existing.bio;
+    if (userData.gallery) existing.gallery = userData.gallery;
   } else {
     S.users.push({
       id: userData.id,
@@ -1880,7 +1901,8 @@ function upsertUser(userData) {
       accent: userData.accent || '#3fb950',
       avatar: userData.avatar || '',
       banner: userData.banner || '',
-      bio: userData.bio || ''
+      bio: userData.bio || '',
+      gallery: userData.gallery || { items:[], bg:'', bgColor:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d' }
     });
   }
 }
@@ -2459,13 +2481,21 @@ document.addEventListener('click',()=>{closeCtx();closeChannelCtx()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCtx();closeChannelCtx();closePC()}});
 
 /* ─── PROFILE CARD ─── */
-function showPC(e,uid){
+async function showPC(e,uid){
   e.stopPropagation();
 
   // Close any open modals (like members list)
   document.querySelectorAll('.ov.show').forEach(m => m.classList.remove('show'));
 
-  const u=U(uid);
+  // Fetch fresh profile data from API for other users
+  let u;
+  if (uid === 'me') {
+    u = S.me;
+  } else if (typeof uid === 'number') {
+    u = await fetchFullUser(uid);
+  } else {
+    u = U(uid);
+  }
   const card=document.getElementById('profile-card');
 
   // Get user's colors (with fallbacks)
@@ -3715,9 +3745,23 @@ document.getElementById('btn-logout').onclick = () => {
 };
 
 /* ─── GALLERY ─── */
-function openGallery(uid){
+async function openGallery(uid){
   S.currentGalleryUserId = uid;
-  const u = U(uid);
+
+  // Fetch fresh data for other users
+  let u;
+  if (uid === 'me') {
+    u = S.me;
+  } else if (typeof uid === 'number') {
+    u = await fetchFullUser(uid);
+  } else {
+    u = U(uid);
+  }
+
+  // Ensure gallery exists
+  if (!u.gallery) {
+    u.gallery = { items:[], bg:'', bgColor:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d' };
+  }
   const gal = u.gallery;
 
   // Apply gallery theme
@@ -3740,7 +3784,8 @@ function openGallery(uid){
   // Hide settings button if not owner
   const settingsBtn = document.getElementById('btn-gallery-settings');
   settingsBtn.style.display = uid === 'me' ? 'block' : 'none';
-  document.getElementById('gallery-controls').style.display = uid === 'me' ? 'flex' : 'none';
+  const isOwner = uid === 'me';
+  document.getElementById('gallery-controls').style.display = isOwner ? 'flex' : 'none';
 
   renderGallery();
   document.getElementById('gallery-page').classList.add('show');
