@@ -16,7 +16,7 @@
 html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow:hidden;user-select:none}
 
 /* ─── LAYOUT ─── */
-#layout{display:grid;grid-template-columns:68px 240px 1fr;height:100vh}
+#layout{display:grid;grid-template-columns:68px var(--sidebar-w,240px) auto 1fr;height:100vh}
 
 /* ─── RAIL ─── */
 #server-rail{background:#0a0d11;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:8px;border-right:1px solid var(--border);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
@@ -44,6 +44,11 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 /* ─── SIDEBAR ─── */
 #channel-sidebar{background:var(--surface);display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:visible;backdrop-filter:blur(var(--sidebar-blur, 10px));-webkit-backdrop-filter:blur(var(--sidebar-blur, 10px));position:relative;z-index:2}
 #sidebar-bg-layer{position:absolute;top:0;bottom:0;left:0;right:0;z-index:0;background-size:cover;background-position:center;opacity:0;transition:opacity .3s;pointer-events:none}
+#sidebar-resize-handle{width:4px;cursor:col-resize;background:transparent;transition:background .15s;z-index:50;flex-shrink:0;position:relative}
+#sidebar-resize-handle:hover,#sidebar-resize-handle.dragging{background:var(--accent)}
+#sidebar-resize-handle::after{content:'';position:absolute;top:0;bottom:0;left:-3px;right:-3px}
+#btn-friends{position:relative}
+.friends-notif-badge{position:absolute;top:1px;right:1px;background:var(--danger,#f85149);color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 4px;line-height:1;pointer-events:none}
 #sidebar-bg-layer.show-image{opacity:1}
 #sidebar-body{position:relative;z-index:1}
 #sidebar-header{padding:14px 14px 10px;display:flex;flex-direction:column;border-bottom:1px solid var(--border);flex-shrink:0;position:relative;z-index:2;background:var(--surface)}
@@ -735,7 +740,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <div style="display:flex;gap:2px;flex-wrap:wrap">
   <button class="sb-btn" id="btn-srv-set" title="Server Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABgklEQVR4nOWUvU4CURCFPzEW/vAEYCcmEMROfQxsaH0Cf55CetdO409pCDQGtdRGHsLCThslQpRoCK65ejbZ3FxWVrcw8SQ3uzP3zJm9M3cH/gu2AN9aG0kmOHYkOExKvADcSnRZy5fP7MXCGHAFNIAKsAu8S7APTGr15RuIU1GMiU1FJVhzlOIV2AHyIZ5597Rn842GEzPAnUh7QAu4AUoRH1QSp6UYXxppF3k7RJiQb1zPeZWgq1UHctoLSmJi7qVRdSVYBV5EONeJAvG2oxQPQOaT8cW9kN9olBmCJaAnYlG+huxTCWaBpnwn4hRl96QRiWeRp2V3ZQdfazAr31PoBL5iiZugIzubRAJXieqym0pixM/kq4mzMEqJykOanFND7SY/AnNxmlx1XNOUnhk1tKNVC4mPfE3TP/jRFsW5Bva/+9GiRoVnjYqCZtBbnFERDLtLNbYi4YE17KasYeeJW1es0YiFvDWuV0LjOnyqX+HIUYoDEsSmI8F6kgn+Lj4A8qSo0U5gVbgAAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-profile" title="My Profile"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA70lEQVR4nO3UQUrDQBSH8R8umqVdWrrWK+hJxEPYHsNuRPFAurR1ZfEAuinVlUUUXVYGJiCCdNJObCn54A8heeGbl8wbGjaUAn2M8BETrnvxWS10Mcb8j9zHmqwUC6Q/5Vk77ydIy5zmFN9VEA9zit8riENtNuYVs5aO37biH/fWtauLOKMpc9ySme4CeS0nV0krfsph3HAht/Fe9k4b/pUdHGGAGzzjK2aKa5zhMNauTAcXeKkwx2FR59hbRtjGFT6XOKfLhHcvsZsqPcDTCsLfecR+ivgho7TMOEU8rUE8SRGfYJZR+orjFHHDdvENyZP0ibBvoI8AAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
-  <button class="sb-btn" id="btn-friends" title="Friends">👥</button>
+  <button class="sb-btn" id="btn-friends" title="Friends">👥<span class="friends-notif-badge" id="friends-notif-badge"></span></button>
   <button class="sb-btn" id="btn-ui" title="UI Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAtElEQVR4nO2UMQ7CMAxF38gNIrgOHYDTcAkWmHsVzsGCaFe4A6tRJSPSqjgJCVue5CWy/7edKFCeJXABjvyJFhCNU+nO98ACOKvBMMmIHfDwOhAjnkDjiXd6flCTVs9H5IqLxjDJLO+EWBxwnYj3wKqEgUsVJ2Et7hdxMnZ+8y50HWNg0RnijTaTZSBfxFFxKWXQz+w8WJ/6TKdUgyDVIEiwPva7FiPulsFWE3LEN+FBK3x4AdaaoWW8RUr6AAAAAElFTkSuQmCC" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-logout" title="Logout" style="color:var(--danger)">⏻</button>
 </div>
@@ -743,6 +748,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     </div>
     <div id="sidebar-body"></div>
   </div>
+  <div id="sidebar-resize-handle"></div>
   <div id="main-area">
     <div id="bg-layer"></div>
     <div id="chat-header">
@@ -1596,7 +1602,6 @@ async function prepareForSave(obj) {
 
 async function saveState() {
   if (!db) return;
-  const storeKey = S.me.id ? `user_${S.me.id}` : 'main';
 
   try {
     const prepared = await prepareForSave({
@@ -1610,7 +1615,7 @@ async function saveState() {
     });
 
     const dataToSave = {
-      id: storeKey,
+      id: 'main',
       ...prepared
     };
 
@@ -1618,26 +1623,24 @@ async function saveState() {
     const store = tx.objectStore(STORE_NAME);
     store.put(dataToSave);
 
-    tx.oncomplete = () => console.log('State saved for', storeKey);
+    tx.oncomplete = () => console.log('State saved successfully');
     tx.onerror = (e) => console.warn('Save error:', e);
   } catch(e) {
     console.warn('Failed to save state:', e);
   }
 }
 
-function loadState(userId) {
+function loadState() {
   return new Promise((resolve) => {
     if (!db) {
       resolve(false);
       return;
     }
 
-    const storeKey = userId ? `user_${userId}` : 'main';
-
     try {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
-      const request = store.get(storeKey);
+      const request = store.get('main');
 
       request.onsuccess = () => {
         const data = request.result;
@@ -1721,41 +1724,6 @@ let saveTimeout;
 function autoSave() {
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(saveState, 1000);
-}
-
-function freshHomeServer() {
-  return {
-    id: 'home', name: 'Home', icon: '🏠', isAdmin: true,
-    banner: '', defChBg: '', iconImg: '',
-    aesthetics: {
-      bg:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950',
-      text:'#c9d1d9', border:'#30363d', sidebarStyle:'solid',
-      sidebarGrad1:'#161b22', sidebarGrad2:'#1c2333',
-      sidebarOpacity:1, sidebarBlur:10
-    },
-    channels: [],
-    dms: []
-  };
-}
-
-function resetState() {
-  S.me = {id:'me',name:'',color:'#58a6ff',accent:'#3fb950',bio:'',avatar:'',banner:'',gallery:{items:[],bg:'',bgColor:'#0d1117',surface:'#161b22',acc1:'#58a6ff',acc2:'#3fb950',text:'#c9d1d9',border:'#30363d'}};
-  S.personalUI = {override:false,bg:'#0d1117',surface:'#161b22',acc1:'#58a6ff',acc2:'#3fb950',text:'#c9d1d9',border:'#30363d',sidebarStyle:'solid',sidebarGrad1:'#161b22',sidebarGrad2:'#1c2333',sidebarOpacity:1,sidebarBlur:10,sidebarBgMode:'color'};
-  S.users = [];
-  S.servers = [freshHomeServer()];
-  S.srvId = 'home';
-  S.chId = null;
-  S.view = 'dms';
-  S.replyTo = null;
-  S.pendingImg = null;
-  S.pendingChBg = null;
-  S.ctxId = null;
-  S.ctxChId = null;
-  S.searchActive = false;
-  S.editingChannelId = null;
-  S.currentGalleryUserId = null;
-  lastRenderedChId = null;
-  _loadedChannels.clear();
 }
 
 // Sync settings (gallery + personalUI) to server database
@@ -1867,44 +1835,58 @@ function updateProfilePreview() {
 
 // Initialize app
 async function initApp() {
+  // Show login screen immediately while loading
   const loginScreen = document.getElementById('login-screen');
 
   await openDB();
-
-  // Identify current user from token before loading state
-  const token = getToken();
-  let currentUserId = null;
-
-  if (token) {
-    try {
-      const meData = await api('/me');
-      currentUserId = meData.id;
-    } catch(e) {
-      removeToken();
-    }
-  }
-
-  // Load state for this specific user (or nothing if no user)
-  const hasLoaded = currentUserId ? await loadState(currentUserId) : false;
+  const hasLoaded = await loadState();
 
   if (!hasLoaded) {
-    if (!S.servers.find(s => s.id === 'home')) {
-      S.servers.push(freshHomeServer());
-    }
+    // build DMs - create a special "home" server just for DMs
+    S.servers.push({
+      id: 'home', name: 'Home', icon: '🏠', isAdmin: true,
+      banner: '', defChBg: '', iconImg: '',
+      aesthetics: {
+  bg: '#0d1117',
+  surface: '#161b22',
+  acc1: '#58a6ff',
+  acc2: '#3fb950',
+  text: '#c9d1d9',
+  border: '#30363d',
+  sidebarStyle: 'solid',
+  sidebarGrad1: '#161b22',
+  sidebarGrad2: '#1c2333',
+  sidebarOpacity:1,
+  sidebarBlur:10
+},
+      channels: [],
+      dms: []
+    });
+    S.users.forEach(u => S.servers[0].dms.push({ id: 'dm_' + u.id, name: u.name, userId: u.id, type: 'dm', bg: '', msgs: [] }));
     S.srvId = 'home';
-    S.chId = null;
-    S.view = 'dms';
+    S.chId = 'dm_u1';
+
+    // seed
+    S.servers[0].dms[0].msgs = [
+      { id: 10, uid: 'u1', text: 'hey!! check out the new theme engine', img: null, reply: null, time: T(), edited: false },
+      { id: 11, uid: 'u1', text: 'I made my chat look like a sunset 🌅', img: null, reply: null, time: T(), edited: false }
+    ];
   }
 
+  // Ensure gallery defaults
   ensureGalleryDefaults();
 
-  if (currentUserId && S.me.name && S.me.name.trim() !== '') {
+  // Check if user is logged in
+  const isLoggedIn = S.me.name && S.me.name.trim() !== '';
+
+  if (isLoggedIn) {
     loginScreen.style.display = 'none';
     await loadDMsFromDatabase();
     renderAll();
     initWebSocket();
   } else {
     loginScreen.style.display = 'flex';
+    // Don't renderAll yet - wait for login
   }
 }
 
@@ -2226,6 +2208,8 @@ function renderSidebar(){
   if(S.view==='dms'){
   document.getElementById('sidebar-title').textContent='Direct Messages';
   document.getElementById('btn-srv-set').style.display='none';
+  document.getElementById('btn-friends').style.display='';
+  updateFriendBadge();
 
   const homeServer = S.servers.find(srv => srv.id === 'home');
   const dmList = homeServer ? homeServer.dms : [];
@@ -2267,6 +2251,7 @@ function renderSidebar(){
     // channels
     // Show server settings button when not in DMs
   document.getElementById('btn-srv-set').style.display='flex';
+  document.getElementById('btn-friends').style.display='none';
     const cl=document.createElement('div'); cl.className='sec-label';
     cl.innerHTML='CHANNELS <button id="btn-addch">+</button>'; body.appendChild(cl);
     document.getElementById('btn-addch').onclick=()=>openM('m-newch');
@@ -2294,6 +2279,11 @@ function renderHeader(){
   document.getElementById('hd-name').textContent=c.name;
   document.getElementById('hd-desc').textContent=isDM?`DM with ${c.name}`:(c.desc||'');
   document.getElementById('msg-input').placeholder=isDM?`Message ${c.name}…`:`Message #${c.name}…`;
+
+  // Members button: servers only
+  document.getElementById('btn-members').style.display = (S.view === 'server') ? '' : 'none';
+  // Update friend request badge
+  updateFriendBadge();
 }
 
 function renderBg(){
@@ -2675,9 +2665,9 @@ async function showPC(e,uid){
   document.getElementById('pc-name').style.color=primary;
   document.getElementById('pc-bio').textContent=u.bio||'No bio yet';
 
-  // Friend badge with user's colors
+  // Friend badge - managed by async status check below
   const friendBadge = document.getElementById('pc-friend');
-  friendBadge.style.display=(u.friends && uid !== 'me')?'inline':'none';
+  friendBadge.style.display='none';
   friendBadge.style.background = `${secondary}22`;
   friendBadge.style.color = secondary;
 
@@ -2727,25 +2717,72 @@ async function showPC(e,uid){
     };
     act.appendChild(dmB);
 
-    // Friend btn
+    // Friend btn - check real friendship status from API
     const frB=document.createElement('button');
-    if(u.friends){
-      frB.className='pc-btn pend';
-      frB.innerHTML='✓ Friends';
-    } else if(u._fp){
-      frB.className='pc-btn pend';
-      frB.innerHTML='⏳ Pending';
-    } else {
-      frB.className='pc-btn pri';
-      frB.style.background = gradient;
-      frB.innerHTML='+ Add';
-      frB.onclick=()=>{
-        u._fp=true;
-        updatePC(uid);
-        setTimeout(()=>{u._fp=false;u.friends=true;updatePC(uid);autoSave()},2000);
-      };
-    }
+    frB.className='pc-btn pend';
+    frB.innerHTML='⏳ Loading...';
+    frB.disabled=true;
     act.appendChild(frB);
+
+    // Async check friendship status
+    if (typeof uid === 'number') {
+      (async () => {
+        try {
+          const statusData = await api(`/friends/status/${uid}`);
+          if (statusData.status === 'accepted') {
+            frB.className='pc-btn pend';
+            frB.innerHTML='✓ Friends';
+            frB.disabled=true;
+            // Also show the friend badge
+            friendBadge.style.display='inline';
+          } else if (statusData.status === 'pending_sent') {
+            frB.className='pc-btn pend';
+            frB.innerHTML='⏳ Pending';
+            frB.disabled=true;
+            friendBadge.style.display='none';
+          } else if (statusData.status === 'pending_received') {
+            frB.className='pc-btn pri';
+            frB.style.background = gradient;
+            frB.innerHTML='✓ Accept';
+            frB.disabled=false;
+            frB.onclick=async()=>{
+              frB.disabled=true;
+              frB.innerHTML='Accepting...';
+              await acceptFriendRequest(statusData.requestId, frB);
+              frB.className='pc-btn pend';
+              frB.innerHTML='✓ Friends';
+              friendBadge.style.display='inline';
+              updateFriendBadge();
+            };
+            friendBadge.style.display='none';
+          } else {
+            frB.className='pc-btn pri';
+            frB.style.background = gradient;
+            frB.innerHTML='+ Add';
+            frB.disabled=false;
+            frB.onclick=async()=>{
+              frB.disabled=true;
+              frB.innerHTML='Sending...';
+              try {
+                await sendFriendRequest(uid, frB);
+                frB.className='pc-btn pend';
+                frB.innerHTML='⏳ Pending';
+              } catch(err) {
+                frB.innerHTML='+ Add';
+                frB.disabled=false;
+              }
+            };
+            friendBadge.style.display='none';
+          }
+        } catch(err) {
+          frB.className='pc-btn pri';
+          frB.style.background = gradient;
+          frB.innerHTML='+ Add';
+          frB.disabled=false;
+          friendBadge.style.display='none';
+        }
+      })();
+    }
 
     // Gallery button for other users
     const galB = document.createElement('button');
@@ -2787,14 +2824,7 @@ async function showPC(e,uid){
 
 function updatePC(uid){
   const u=U(uid);
-  document.getElementById('pc-friend').style.display=u.friends?'inline':'none';
-  const act=document.getElementById('pc-actions');
-  // rebuild just the friend btn (second child)
-  const btns=act.querySelectorAll('.pc-btn');
-  if(btns.length<2) return;
-  const fb=btns[1];
-  if(u.friends){fb.className='pc-btn pend';fb.innerHTML='✓ Friends';fb.onclick=null}
-  else if(u._fp){fb.className='pc-btn pend';fb.innerHTML='⏳ Pending';fb.onclick=null}
+  // Friend badge is now managed by the async status check in showPC
 }
 
 function closePC(){document.getElementById('profile-card').style.display='none'}
@@ -3951,10 +3981,6 @@ async function handleAuth() {
 
       setToken(data.token);
 
-      // Wipe old account state, then restore this user's saved state
-      resetState();
-      const hadSavedState = await loadState(data.user.id);
-
       const defaultGallery = {
         items:[], bg:'', bgColor:'#0d1117', surface:'#161b22',
         acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d'
@@ -3965,12 +3991,13 @@ async function handleAuth() {
         sidebarStyle:'solid', sidebarGrad1:'#161b22', sidebarGrad2:'#1c2333'
       };
 
+      // Load gallery and personalUI from server
       const serverGallery = data.user.gallery && Object.keys(data.user.gallery).length > 0
         ? { ...defaultGallery, ...data.user.gallery }
-        : (hadSavedState && S.me.gallery ? S.me.gallery : defaultGallery);
+        : defaultGallery;
       const serverUI = data.user.personal_ui && Object.keys(data.user.personal_ui).length > 0
         ? { ...defaultUI, ...data.user.personal_ui }
-        : (hadSavedState && S.personalUI ? S.personalUI : defaultUI);
+        : defaultUI;
 
       S.me = {
         id: data.user.id,
@@ -4006,9 +4033,6 @@ async function handleAuth() {
 
       setToken(data.token);
 
-      // Complete fresh state for brand new account
-      resetState();
-
       const defaultGallery = {
         items:[], bg:'', bgColor:'#0d1117', surface:'#161b22',
         acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d'
@@ -4028,9 +4052,7 @@ async function handleAuth() {
       showLoginSuccess('Account created!');
       ensureGalleryDefaults();
 
-      setTimeout(async () => {
-        await loadUserData();
-        await loadDMsFromDatabase();
+      setTimeout(() => {
         document.getElementById('login-screen').style.display = 'none';
         renderAll();
         initWebSocket();
@@ -4067,7 +4089,7 @@ function loginUser(username, userData) {
 document.getElementById('btn-logout').onclick = () => {
   if(!confirm('Log out? Your data will be saved.')) return;
 
-  // Save current user's state (keyed by their user ID)
+  // Save current state first
   saveState();
 
   // Disconnect WebSocket
@@ -4076,11 +4098,8 @@ document.getElementById('btn-logout').onclick = () => {
     ws = null;
   }
 
-  // Clear token so next login starts completely fresh
-  removeToken();
-
-  // Wipe all in-memory state
-  resetState();
+  // Clear the logged-in user's name (but keep their data)
+  S.me.name = '';
 
   // Show login screen
   document.getElementById('login-screen').style.display = 'flex';
@@ -4443,6 +4462,13 @@ function initWebSocket() {
 
                 case 'error':
                     console.error('WebSocket error:', data.message);
+                    break;
+
+                case 'friend_request_received':
+                case 'friend_request_sent':
+                case 'friend_request_accepted':
+                case 'friend_request_declined':
+                    updateFriendBadge();
                     break;
 
                 case 'dm_bg_changed': {
@@ -4877,9 +4903,13 @@ async function sendFriendRequest(friendId, button) {
             }));
         }
 
-        // Refresh
-        const query = document.getElementById('user-search-input').value;
-        searchUsers(query);
+        // Refresh search results if search is open
+        const searchInput = document.getElementById('user-search-input');
+        if (searchInput && searchInput.value) {
+          searchUsers(searchInput.value);
+        }
+        // Update badge
+        updateFriendBadge();
 
     } catch (err) {
         console.error('Send request error:', err);
@@ -4919,9 +4949,10 @@ async function acceptFriendRequest(requestId, button) {
             }));
         }
 
-        // Refresh
-        const query = document.getElementById('user-search-input').value;
-        if (query) searchUsers(query);
+        // Refresh search results if search is open
+        const searchInput = document.getElementById('user-search-input');
+        if (searchInput && searchInput.value) searchUsers(searchInput.value);
+        updateFriendBadge();
 
     } catch (err) {
         console.error('Accept error:', err);
@@ -4942,9 +4973,10 @@ async function declineFriendRequest(requestId, button) {
 
         if (!res.ok) throw new Error('Failed');
 
-        // Refresh
-        const query = document.getElementById('user-search-input').value;
-        if (query) searchUsers(query);
+        // Refresh search results if search is open
+        const searchInput = document.getElementById('user-search-input');
+        if (searchInput && searchInput.value) searchUsers(searchInput.value);
+        updateFriendBadge();
 
     } catch (err) {
         console.error('Decline error:', err);
@@ -5133,6 +5165,61 @@ async function cancelFriendRequest(requestId, button) {
     await declineFriendRequest(requestId, button);
 }
 
+/* ─── FRIEND REQUEST BADGE ─── */
+async function updateFriendBadge() {
+  try {
+    if (!getToken()) return;
+    const all = await api('/friends/requests');
+    const incoming = all.filter(f => f.status === 'pending' && !f.isRequester);
+    const badge = document.getElementById('friends-notif-badge');
+    const modalBadge = document.getElementById('req-count-badge');
+    if (incoming.length > 0) {
+      const label = incoming.length > 10 ? '10+' : String(incoming.length);
+      badge.textContent = label;
+      badge.style.display = 'flex';
+      if (modalBadge) { modalBadge.textContent = label; modalBadge.style.display = 'inline'; }
+    } else {
+      badge.style.display = 'none';
+      if (modalBadge) modalBadge.style.display = 'none';
+    }
+  } catch(e) { /* silent */ }
+}
+
+/* ─── SIDEBAR RESIZE ─── */
+(function() {
+  const handle = document.getElementById('sidebar-resize-handle');
+  const layout = document.getElementById('layout');
+  let dragging = false, startX, startW;
+  const MIN_W = 120, MAX_W = 360;
+
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    dragging = true;
+    startX = e.clientX;
+    const computed = getComputedStyle(layout);
+    const cols = computed.gridTemplateColumns.split(/\s+/);
+    startW = parseFloat(cols[1]) || 240;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = e.clientX - startX;
+    const newW = Math.min(MAX_W, Math.max(MIN_W, startW + delta));
+    layout.style.setProperty('--sidebar-w', newW + 'px');
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
+
 // Open DM
 async function openDMWithUser(userId) {
     try {
@@ -5172,6 +5259,5 @@ async function openDMWithUser(userId) {
 </script>
 </body>
 </html>
-
 
 
