@@ -49,8 +49,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 #sidebar-header{padding:14px 14px 10px;display:flex;flex-direction:column;border-bottom:1px solid var(--border);flex-shrink:0;position:relative;z-index:2;background:var(--surface)}
 #server-banner{height:80px;background-size:cover;background-position:center;border-radius:8px 8px 0 0;margin:-14px -14px 10px;display:none}
 #server-banner.visible{display:block}
-.sb-header-row{display:flex;align-items:center;justify-content:space-between}
-#sidebar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.sb-header-row{display:flex;flex-direction:column;gap:6px}
+#sidebar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-btn{background:none;border:none;color:var(--dim);font-size:17px;cursor:pointer;padding:3px 6px;border-radius:5px;transition:color .15s,background .15s}
 .sb-btn:hover{color:var(--accent);background:var(--surface2)}
 #sidebar-body{flex:1;overflow-y:auto;padding:6px 8px}
@@ -732,7 +732,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       <div id="server-banner"></div>
       <div class="sb-header-row">
         <h2 id="sidebar-title">Syntaxy</h2>
-        <div style="display:flex;gap:2px">
+        <div style="display:flex;gap:2px;flex-wrap:wrap">
   <button class="sb-btn" id="btn-srv-set" title="Server Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABgklEQVR4nOWUvU4CURCFPzEW/vAEYCcmEMROfQxsaH0Cf55CetdO409pCDQGtdRGHsLCThslQpRoCK65ejbZ3FxWVrcw8SQ3uzP3zJm9M3cH/gu2AN9aG0kmOHYkOExKvADcSnRZy5fP7MXCGHAFNIAKsAu8S7APTGr15RuIU1GMiU1FJVhzlOIV2AHyIZ5597Rn842GEzPAnUh7QAu4AUoRH1QSp6UYXxppF3k7RJiQb1zPeZWgq1UHctoLSmJi7qVRdSVYBV5EONeJAvG2oxQPQOaT8cW9kN9olBmCJaAnYlG+huxTCWaBpnwn4hRl96QRiWeRp2V3ZQdfazAr31PoBL5iiZugIzubRAJXieqym0pixM/kq4mzMEqJykOanFND7SY/AnNxmlx1XNOUnhk1tKNVC4mPfE3TP/jRFsW5Bva/+9GiRoVnjYqCZtBbnFERDLtLNbYi4YE17KasYeeJW1es0YiFvDWuV0LjOnyqX+HIUYoDEsSmI8F6kgn+Lj4A8qSo0U5gVbgAAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-profile" title="My Profile"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA70lEQVR4nO3UQUrDQBSH8R8umqVdWrrWK+hJxEPYHsNuRPFAurR1ZfEAuinVlUUUXVYGJiCCdNJObCn54A8heeGbl8wbGjaUAn2M8BETrnvxWS10Mcb8j9zHmqwUC6Q/5Vk77ydIy5zmFN9VEA9zit8riENtNuYVs5aO37biH/fWtauLOKMpc9ySme4CeS0nV0krfsph3HAht/Fe9k4b/pUdHGGAGzzjK2aKa5zhMNauTAcXeKkwx2FR59hbRtjGFT6XOKfLhHcvsZsqPcDTCsLfecR+ivgho7TMOEU8rUE8SRGfYJZR+orjFHHDdvENyZP0ibBvoI8AAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-ui" title="UI Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAtElEQVR4nO2UMQ7CMAxF38gNIrgOHYDTcAkWmHsVzsGCaFe4A6tRJSPSqjgJCVue5CWy/7edKFCeJXABjvyJFhCNU+nO98ACOKvBMMmIHfDwOhAjnkDjiXd6flCTVs9H5IqLxjDJLO+EWBxwnYj3wKqEgUsVJ2Et7hdxMnZ+8y50HWNg0RnijTaTZSBfxFFxKWXQz+w8WJ/6TKdUgyDVIEiwPva7FiPulsFWE3LEN+FBK3x4AdaaoWW8RUr6AAAAAElFTkSuQmCC" class="icon-img invert" alt=""></button>
