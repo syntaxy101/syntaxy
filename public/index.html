@@ -20,6 +20,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 
 /* ─── RAIL ─── */
 #server-rail{background:#0a0d11;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:8px;border-right:1px solid var(--border);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.rail-icon[draggable="true"]{cursor:grab}.rail-icon[draggable="true"]:active{cursor:grabbing}
 #server-rail::-webkit-scrollbar{width:4px}
 #server-rail::-webkit-scrollbar-track{background:transparent}
 #server-rail::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -48,8 +49,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 #sidebar-header{padding:14px 14px 10px;display:flex;flex-direction:column;border-bottom:1px solid var(--border);flex-shrink:0;position:relative;z-index:2;background:var(--surface)}
 #server-banner{height:80px;background-size:cover;background-position:center;border-radius:8px 8px 0 0;margin:-14px -14px 10px;display:none}
 #server-banner.visible{display:block}
-.sb-header-row{display:flex;align-items:center;justify-content:space-between}
-#sidebar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.sb-header-row{display:flex;flex-direction:column;gap:6px}
+#sidebar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-btn{background:none;border:none;color:var(--dim);font-size:17px;cursor:pointer;padding:3px 6px;border-radius:5px;transition:color .15s,background .15s}
 .sb-btn:hover{color:var(--accent);background:var(--surface2)}
 #sidebar-body{flex:1;overflow-y:auto;padding:6px 8px}
@@ -703,7 +704,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     <div class="login-card-glow"></div>
     <div class="icon-glow">✦</div>
     <h1>Syntaxy</h1>
-    <p class="ls">Theme it. Own it. Flex it.</p>
+    <p class="ls">Theme it.</p>
 
     <div class="login-tabs">
       <button class="login-tab active" id="tab-login">Login</button>
@@ -731,9 +732,10 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       <div id="server-banner"></div>
       <div class="sb-header-row">
         <h2 id="sidebar-title">Syntaxy</h2>
-        <div style="display:flex;gap:2px">
+        <div style="display:flex;gap:2px;flex-wrap:wrap">
   <button class="sb-btn" id="btn-srv-set" title="Server Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABgklEQVR4nOWUvU4CURCFPzEW/vAEYCcmEMROfQxsaH0Cf55CetdO409pCDQGtdRGHsLCThslQpRoCK65ejbZ3FxWVrcw8SQ3uzP3zJm9M3cH/gu2AN9aG0kmOHYkOExKvADcSnRZy5fP7MXCGHAFNIAKsAu8S7APTGr15RuIU1GMiU1FJVhzlOIV2AHyIZ5597Rn842GEzPAnUh7QAu4AUoRH1QSp6UYXxppF3k7RJiQb1zPeZWgq1UHctoLSmJi7qVRdSVYBV5EONeJAvG2oxQPQOaT8cW9kN9olBmCJaAnYlG+huxTCWaBpnwn4hRl96QRiWeRp2V3ZQdfazAr31PoBL5iiZugIzubRAJXieqym0pixM/kq4mzMEqJykOanFND7SY/AnNxmlx1XNOUnhk1tKNVC4mPfE3TP/jRFsW5Bva/+9GiRoVnjYqCZtBbnFERDLtLNbYi4YE17KasYeeJW1es0YiFvDWuV0LjOnyqX+HIUYoDEsSmI8F6kgn+Lj4A8qSo0U5gVbgAAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-profile" title="My Profile"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA70lEQVR4nO3UQUrDQBSH8R8umqVdWrrWK+hJxEPYHsNuRPFAurR1ZfEAuinVlUUUXVYGJiCCdNJObCn54A8heeGbl8wbGjaUAn2M8BETrnvxWS10Mcb8j9zHmqwUC6Q/5Vk77ydIy5zmFN9VEA9zit8riENtNuYVs5aO37biH/fWtauLOKMpc9ySme4CeS0nV0krfsph3HAht/Fe9k4b/pUdHGGAGzzjK2aKa5zhMNauTAcXeKkwx2FR59hbRtjGFT6XOKfLhHcvsZsqPcDTCsLfecR+ivgho7TMOEU8rUE8SRGfYJZR+orjFHHDdvENyZP0ibBvoI8AAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
+  <button class="sb-btn" id="btn-friends" title="Friends">👥</button>
   <button class="sb-btn" id="btn-ui" title="UI Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAtElEQVR4nO2UMQ7CMAxF38gNIrgOHYDTcAkWmHsVzsGCaFe4A6tRJSPSqjgJCVue5CWy/7edKFCeJXABjvyJFhCNU+nO98ACOKvBMMmIHfDwOhAjnkDjiXd6flCTVs9H5IqLxjDJLO+EWBxwnYj3wKqEgUsVJ2Et7hdxMnZ+8y50HWNg0RnijTaTZSBfxFFxKWXQz+w8WJ/6TKdUgyDVIEiwPva7FiPulsFWE3LEN+FBK3x4AdaaoWW8RUr6AAAAAElFTkSuQmCC" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-logout" title="Logout" style="color:var(--danger)">⏻</button>
 </div>
@@ -782,6 +784,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 <!-- CTX MENU -->
 <div id="ctx-menu">
   <div class="ctx-item" id="ctx-reply"><span class="ctx-ico">↩</span>Reply</div>
+  <div class="ctx-item" id="ctx-copy"><span class="ctx-ico">📋</span>Copy Text</div>
   <div class="ctx-item" id="ctx-react"><span class="ctx-ico">😀</span>React</div>
   <div class="ctx-item" id="ctx-edit" style="display:none"><span class="ctx-ico">✏️</span>Edit</div>
   <div class="ctx-sep" id="ctx-sep" style="display:none"></div>
@@ -847,14 +850,19 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 </div>
 
 <!-- FRIEND REQUESTS MODAL -->
-<div id="friend-requests-overlay" class="ov">
-    <div class="modal" style="width: 500px">
-        <button id="friend-requests-close" class="modal-x">×</button>
-        <h3>👥 Friend Requests</h3>
-
-        <div id="friend-requests-list" style="margin-top: 16px;">
-        </div>
+<div class="ov" id="m-friends">
+  <div class="modal" style="width:460px">
+    <button class="modal-x" data-close="m-friends">✕</button>
+    <h3>👥 Friends</h3>
+    <div style="display:flex;gap:0;margin:12px 0 16px;border-bottom:2px solid var(--border)">
+      <button class="friends-tab active" id="tab-friends-list" style="flex:1;padding:10px;background:none;border:none;color:var(--text);font-weight:600;font-size:13px;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;font-family:Inter,sans-serif">Friends</button>
+      <button class="friends-tab" id="tab-friends-requests" style="flex:1;padding:10px;background:none;border:none;color:var(--dim);font-weight:600;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:Inter,sans-serif">Requests <span id="req-count-badge" style="display:none;background:var(--danger);color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;margin-left:4px">0</span></button>
     </div>
+    <div id="friends-tab-content" style="max-height:380px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent">
+      <div id="friends-list-panel"></div>
+      <div id="friends-requests-panel" style="display:none"></div>
+    </div>
+  </div>
 </div>
 
 <!-- MODALS -->\
@@ -1588,7 +1596,6 @@ async function prepareForSave(obj) {
 
 async function saveState() {
   if (!db) return;
-  // Key by user ID so each account has its own state
   const storeKey = S.me.id ? `user_${S.me.id}` : 'main';
 
   try {
@@ -1669,12 +1676,7 @@ function loadState(userId) {
             }
           });
 
-          // Ensure home server exists
-          if (!S.servers.find(s => s.id === 'home')) {
-            S.servers.unshift(freshHomeServer());
-          }
-
-          console.log('State loaded for', storeKey, {servers: S.servers.length, srvId: S.srvId, chId: S.chId});
+          console.log('State loaded successfully', {servers: S.servers.length, srvId: S.srvId, chId: S.chId});
           resolve(true);
         } else {
           resolve(false);
@@ -1869,7 +1871,7 @@ async function initApp() {
 
   await openDB();
 
-  // Check if we have a token and try to identify the user
+  // Identify current user from token before loading state
   const token = getToken();
   let currentUserId = null;
 
@@ -1878,7 +1880,6 @@ async function initApp() {
       const meData = await api('/me');
       currentUserId = meData.id;
     } catch(e) {
-      // Token expired or invalid - clear it
       removeToken();
     }
   }
@@ -1887,7 +1888,6 @@ async function initApp() {
   const hasLoaded = currentUserId ? await loadState(currentUserId) : false;
 
   if (!hasLoaded) {
-    // Fresh state - ensure home server exists
     if (!S.servers.find(s => s.id === 'home')) {
       S.servers.push(freshHomeServer());
     }
@@ -1898,7 +1898,6 @@ async function initApp() {
 
   ensureGalleryDefaults();
 
-  // If we identified a user from token, log them in
   if (currentUserId && S.me.name && S.me.name.trim() !== '') {
     loginScreen.style.display = 'none';
     await loadDMsFromDatabase();
@@ -1975,7 +1974,9 @@ function upsertUser(userData) {
     existing.accent = userData.accent || existing.accent;
     existing.avatar = userData.avatar !== undefined ? userData.avatar : existing.avatar;
     existing.banner = userData.banner !== undefined ? userData.banner : existing.banner;
-    existing.bio = userData.bio !== undefined ? userData.bio : existing.bio;
+    existing.bio = userData.bio !== undefined ? userData.bio :
+    existing.bio;
+    if (userData.gallery) existing.gallery = userData.gallery;
   } else {
     S.users.push({
       id: userData.id,
@@ -1984,7 +1985,8 @@ function upsertUser(userData) {
       accent: userData.accent || '#3fb950',
       avatar: userData.avatar || '',
       banner: userData.banner || '',
-      bio: userData.bio || ''
+      bio: userData.bio || '',
+      gallery: userData.gallery || { items:[], bg:'', bgColor:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d' }
     });
   }
 }
@@ -2147,6 +2149,39 @@ function renderRail(){
     i.onclick=()=>{S.view='server';S.srvId=s.id;S.chId=s.channels[0].id;renderAll();autoSave()};
     i.onmouseenter = (e) => showTooltip(e, s.name);
     i.onmouseleave = hideTooltip;
+
+    // Drag-to-reorder
+    i.draggable = true;
+    i.dataset.srvId = s.id;
+    i.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', s.id);
+      i.style.opacity = '0.4';
+      hideTooltip();
+    });
+    i.addEventListener('dragend', () => { i.style.opacity = '1'; });
+    i.addEventListener('dragover', e => {
+      e.preventDefault();
+      i.style.borderTop = '2px solid var(--accent)';
+    });
+    i.addEventListener('dragleave', () => { i.style.borderTop = ''; });
+    i.addEventListener('drop', e => {
+      e.preventDefault();
+      i.style.borderTop = '';
+      const draggedId = isNaN(e.dataTransfer.getData('text/plain'))
+        ? e.dataTransfer.getData('text/plain')
+        : Number(e.dataTransfer.getData('text/plain'));
+      const targetId = s.id;
+      if (draggedId === targetId) return;
+      const fromIdx = S.servers.findIndex(sv => sv.id === draggedId);
+      const toIdx = S.servers.findIndex(sv => sv.id === targetId);
+      if (fromIdx > -1 && toIdx > -1) {
+        const [moved] = S.servers.splice(fromIdx, 1);
+        S.servers.splice(toIdx, 0, moved);
+        renderRail();
+        autoSave();
+      }
+    });
+
     el.appendChild(i);
   });
 
@@ -2277,7 +2312,7 @@ async function renderMsgs(){
   const wrap=document.getElementById('messages-wrap');
 
   // Load messages from API only if not already loaded
-  if (!_loadedChannels.has(c.id) && typeof c.id === 'number') {
+  if ((!_loadedChannels.has(c.id) || c.msgs.length === 0) && typeof c.id === 'number') {
     _loadedChannels.add(c.id);
     try {
       const endpoint = c.type === 'dm'
@@ -2551,6 +2586,13 @@ function closeChannelCtx() {
 }
 
 document.getElementById('ctx-reply').onclick =()=>{if(S.ctxId!==null)startReply(S.ctxId);closeCtx()};
+document.getElementById('ctx-copy').onclick  =()=>{
+  if(S.ctxId!==null){
+    const c=ch();const m=c.msgs.find(x=>x.id===S.ctxId);
+    if(m&&m.text)navigator.clipboard.writeText(m.text);
+  }
+  closeCtx();
+};
 document.getElementById('ctx-edit').onclick  =()=>{if(S.ctxId!==null)editMsg(S.ctxId);closeCtx()};
 document.getElementById('ctx-delete').onclick=()=>{if(S.ctxId!==null)deleteMsg(S.ctxId);closeCtx()};
 document.getElementById('ctx-react').onclick =()=>{if(S.ctxId!==null)reactToMsg(S.ctxId);closeCtx()};
@@ -2584,7 +2626,10 @@ document.getElementById('ctx-ch-delete').onclick = () => {
   closeChannelCtx();
 };
 
-document.addEventListener('click',()=>{closeCtx();closeChannelCtx()});
+document.addEventListener('click',(e)=>{
+  if(!e.target.closest('#ctx-menu'))closeCtx();
+  if(!e.target.closest('#ctx-channel'))closeChannelCtx();
+});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCtx();closeChannelCtx();closePC()}});
 
 /* ─── PROFILE CARD ─── */
@@ -2889,6 +2934,11 @@ function editMsg(id){
     if(row) {
       const newRow = createMsgRow(m);
       row.replaceWith(newRow);
+    }
+    // Persist edit via WebSocket
+    if(typeof id === 'number') {
+      const isDM = c.type === 'dm';
+      editMessageViaWebSocket(id, m.text, isDM, isDM ? null : c.id, isDM ? c.id : null);
     }
     autoSave();
   }
@@ -3364,15 +3414,17 @@ document.getElementById('btn-save-srv').onclick=async()=>{
   s.aesthetics.sidebarBlur = Number(document.getElementById('s-sidebar-blur').value);
   s.aesthetics.sidebarBgMode = document.getElementById('s-sidebar-bg-mode').value;
 
-  try {
-    const iF=document.getElementById('ub-srv-icon').querySelector('input').files[0];
-    if(iF) s.iconImg = await uploadFileToS3(iF);
-    const bF=document.getElementById('ub-srv-ban').querySelector('input').files[0];
-    if(bF) s.banner = await uploadFileToS3(bF);
-    const cF=document.getElementById('ub-srv-chbg').querySelector('input').files[0];
-    if(cF) s.defChBg = await uploadFileToS3(cF);
-  } catch(err) {
-    console.error('Failed to upload server images:', err);
+  const iF=document.getElementById('ub-srv-icon').querySelector('input').files[0];
+  if(iF) {
+    try { s.iconImg = await uploadFileToS3(iF); } catch(e) { s.iconImg = await readF(iF); }
+  }
+  const bF=document.getElementById('ub-srv-ban').querySelector('input').files[0];
+  if(bF) {
+    try { s.banner = await uploadFileToS3(bF); } catch(e) { s.banner = await readF(bF); }
+  }
+  const cF=document.getElementById('ub-srv-chbg').querySelector('input').files[0];
+  if(cF) {
+    try { s.defChBg = await uploadFileToS3(cF); } catch(e) { s.defChBg = await readF(cF); }
   }
 
   // Broadcast to all members via WebSocket
@@ -3707,25 +3759,26 @@ document.getElementById('ub-chbg').querySelector('input').onchange=async functio
 };
 document.getElementById('btn-save-chbg').onclick=async()=>{
   const c=ch();if(!c)return;
-  try {
-    let bgUrl = '';
-    if(S.pendingChBgFile) {
+  let bgUrl = S.pendingChBg || '';
+
+  if(S.pendingChBgFile) {
+    try {
       bgUrl = await uploadFileToS3(S.pendingChBgFile);
-    } else if(S.pendingChBg) {
-      bgUrl = S.pendingChBg;
+    } catch(err) {
+      console.warn('S3 upload failed, using base64:', err);
     }
-    if(!bgUrl) { S.pendingChBg=null;S.pendingChBgFile=null;closeM('m-chbg');return; }
-
-    c.bg = bgUrl;
-
-    if(c.type === 'dm' && ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type:'dm_bg_change', dmChannelId:c.id, background:bgUrl }));
-    } else if(c.type !== 'dm' && ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type:'channel_bg_change', channelId:c.id, background:bgUrl }));
-    }
-  } catch(err) {
-    console.error('Failed to set background:', err);
   }
+
+  if(!bgUrl) { S.pendingChBg=null;S.pendingChBgFile=null;closeM('m-chbg');return; }
+
+  c.bg = bgUrl;
+
+  if(c.type === 'dm' && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type:'dm_bg_change', dmChannelId:c.id, background:bgUrl }));
+  } else if(c.type !== 'dm' && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type:'channel_bg_change', channelId:c.id, background:bgUrl }));
+  }
+
   S.pendingChBg=null;S.pendingChBgFile=null;closeM('m-chbg');renderBg();autoSave();
 };
 document.getElementById('btn-rm-chbg').onclick=()=>{
@@ -3898,7 +3951,7 @@ async function handleAuth() {
 
       setToken(data.token);
 
-      // Reset state completely, then try loading this user's saved state
+      // Wipe old account state, then restore this user's saved state
       resetState();
       const hadSavedState = await loadState(data.user.id);
 
@@ -3912,7 +3965,6 @@ async function handleAuth() {
         sidebarStyle:'solid', sidebarGrad1:'#161b22', sidebarGrad2:'#1c2333'
       };
 
-      // Always use server-authoritative profile data
       const serverGallery = data.user.gallery && Object.keys(data.user.gallery).length > 0
         ? { ...defaultGallery, ...data.user.gallery }
         : (hadSavedState && S.me.gallery ? S.me.gallery : defaultGallery);
@@ -3954,7 +4006,7 @@ async function handleAuth() {
 
       setToken(data.token);
 
-      // Complete fresh state for new account
+      // Complete fresh state for brand new account
       resetState();
 
       const defaultGallery = {
@@ -4015,7 +4067,7 @@ function loginUser(username, userData) {
 document.getElementById('btn-logout').onclick = () => {
   if(!confirm('Log out? Your data will be saved.')) return;
 
-  // Save current user's state first (keyed by their ID)
+  // Save current user's state (keyed by their user ID)
   saveState();
 
   // Disconnect WebSocket
@@ -4024,10 +4076,10 @@ document.getElementById('btn-logout').onclick = () => {
     ws = null;
   }
 
-  // Clear token so next login starts fresh
+  // Clear token so next login starts completely fresh
   removeToken();
 
-  // Reset in-memory state
+  // Wipe all in-memory state
   resetState();
 
   // Show login screen
@@ -4534,7 +4586,7 @@ function handleNewChannelMessage(channelId, message) {
     const c = ch();
     if (!c || c.id !== channelId) return;
 
-    c.msgs.push({
+  c.msgs.push({
         id: message.id,
         uid: message.user_id === S.me.id ? 'me' : message.user_id,
         text: message.text || '',
@@ -4544,7 +4596,8 @@ function handleNewChannelMessage(channelId, message) {
         edited: message.edited,
         reactions: message.reactions || {},
         username: message.username,
-        userColor: message.color || '#58a6ff'
+        userColor: message.color || '#58a6ff',
+        sys: message.is_system || false
     });
 
     renderMsgs();
@@ -4564,6 +4617,12 @@ function handleNewDMMessage(dmChannelId, message) {
     const c = ch();
     if (!c || c.id !== dmChannelId) return;
 
+  // Remove optimistic temp message if this is our own echo
+    if (message.user_id === S.me.id) {
+        const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
+        if (tempIdx > -1) c.msgs.splice(tempIdx, 1);
+    }
+
     c.msgs.push({
         id: message.id,
         uid: message.user_id === S.me.id ? 'me' : message.user_id,
@@ -4574,7 +4633,8 @@ function handleNewDMMessage(dmChannelId, message) {
         edited: message.edited,
         reactions: message.reactions || {},
         username: message.username,
-        userColor: message.color || '#58a6ff'
+        userColor: message.color || '#58a6ff',
+        sys: message.is_system || false
     });
 
     renderMsgs();
@@ -4891,6 +4951,181 @@ async function declineFriendRequest(requestId, button) {
         alert('Failed to decline');
         button.disabled = false;
     }
+}
+
+/* ─── FRIENDS MODAL ─── */
+document.getElementById('btn-friends').onclick = () => {
+  openM('m-friends');
+  switchFriendsTab('list');
+  loadFriendsList();
+};
+
+document.getElementById('tab-friends-list').onclick = () => switchFriendsTab('list');
+document.getElementById('tab-friends-requests').onclick = () => switchFriendsTab('requests');
+
+function switchFriendsTab(tab) {
+  const listTab = document.getElementById('tab-friends-list');
+  const reqTab = document.getElementById('tab-friends-requests');
+  const listPanel = document.getElementById('friends-list-panel');
+  const reqPanel = document.getElementById('friends-requests-panel');
+
+  if (tab === 'list') {
+    listTab.style.color = 'var(--text)';
+    listTab.style.borderBottomColor = 'var(--accent)';
+    reqTab.style.color = 'var(--dim)';
+    reqTab.style.borderBottomColor = 'transparent';
+    listPanel.style.display = 'block';
+    reqPanel.style.display = 'none';
+    loadFriendsList();
+  } else {
+    reqTab.style.color = 'var(--text)';
+    reqTab.style.borderBottomColor = 'var(--accent)';
+    listTab.style.color = 'var(--dim)';
+    listTab.style.borderBottomColor = 'transparent';
+    listPanel.style.display = 'none';
+    reqPanel.style.display = 'block';
+    loadFriendRequests();
+  }
+}
+
+async function loadFriendsList() {
+  const panel = document.getElementById('friends-list-panel');
+  panel.innerHTML = '<div style="text-align:center;padding:20px;color:var(--dim)">Loading...</div>';
+  try {
+    const all = await api('/friends');
+    const friends = all.filter(f => f.status === 'accepted');
+    if (friends.length === 0) {
+      panel.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--dim);font-size:13px"><div style="font-size:36px;margin-bottom:8px;opacity:0.3">👥</div>No friends yet<br><span style="font-size:12px;opacity:0.7">Search for users to add friends</span></div>';
+      return;
+    }
+    panel.innerHTML = '';
+    friends.forEach(f => {
+      const u = f.user;
+      const avInner = u.avatar
+        ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+        : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s';
+      row.onmouseenter = () => row.style.background = 'var(--surface2)';
+      row.onmouseleave = () => row.style.background = '';
+      row.innerHTML = `
+        ${avInner}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.display_name || u.username}</div>
+          <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
+        </div>
+        <button class="btn sec" style="font-size:12px;padding:6px 12px" data-dm-uid="${u.id}">💬 DM</button>
+      `;
+      row.querySelector('[data-dm-uid]').onclick = async (e) => {
+        e.stopPropagation();
+        try {
+          const dm = await api('/dms', { method:'POST', body:{ userId: u.id } });
+          await loadDMsFromDatabase();
+          S.view = 'dms'; S.srvId = 'home'; S.chId = dm.id;
+          closeM('m-friends');
+          renderAll();
+        } catch(err) { console.error('DM open failed:', err); }
+      };
+      row.onclick = (e) => showPC(e, u.id);
+      panel.appendChild(row);
+    });
+  } catch(err) {
+    panel.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger)">Failed to load friends</div>';
+    console.error(err);
+  }
+}
+
+async function loadFriendRequests() {
+  const panel = document.getElementById('friends-requests-panel');
+  panel.innerHTML = '<div style="text-align:center;padding:20px;color:var(--dim)">Loading...</div>';
+  try {
+    const all = await api('/friends/requests');
+    const requests = all.filter(f => f.status === 'pending' && !f.isRequester);
+    const sent = all.filter(f => f.status === 'pending' && f.isRequester);
+
+    // Update badge
+    const badge = document.getElementById('req-count-badge');
+    if (requests.length > 0) {
+      badge.textContent = requests.length;
+      badge.style.display = 'inline';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if (requests.length === 0 && sent.length === 0) {
+      panel.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--dim);font-size:13px"><div style="font-size:36px;margin-bottom:8px;opacity:0.3">📭</div>No pending requests</div>';
+      return;
+    }
+
+    panel.innerHTML = '';
+
+    if (requests.length > 0) {
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:11px;font-weight:600;color:var(--dim);padding:4px 12px 8px;text-transform:uppercase;letter-spacing:0.5px';
+      label.textContent = `Incoming — ${requests.length}`;
+      panel.appendChild(label);
+
+      requests.forEach(r => {
+        const u = r.user;
+        const avInner = u.avatar
+          ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+          : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px';
+        row.innerHTML = `
+          ${avInner}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'}">${u.display_name || u.username}</div>
+            <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn pri" style="font-size:12px;padding:6px 12px" data-accept="${r.id}">✓ Accept</button>
+            <button class="btn dan" style="font-size:12px;padding:6px 12px" data-decline="${r.id}">✕</button>
+          </div>
+        `;
+        row.querySelector('[data-accept]').onclick = async (e) => {
+          await acceptFriendRequest(r.id, e.target);
+          loadFriendRequests();
+        };
+        row.querySelector('[data-decline]').onclick = async (e) => {
+          await declineFriendRequest(r.id, e.target);
+          loadFriendRequests();
+        };
+        panel.appendChild(row);
+      });
+    }
+
+    if (sent.length > 0) {
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:11px;font-weight:600;color:var(--dim);padding:12px 12px 8px;text-transform:uppercase;letter-spacing:0.5px';
+      label.textContent = `Sent — ${sent.length}`;
+      panel.appendChild(label);
+
+      sent.forEach(r => {
+        const u = r.user;
+        const avInner = u.avatar
+          ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+          : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;opacity:0.7';
+        row.innerHTML = `
+          ${avInner}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'}">${u.display_name || u.username}</div>
+            <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
+          </div>
+          <span style="font-size:12px;color:var(--dim)">⏳ Pending</span>
+        `;
+        panel.appendChild(row);
+      });
+    }
+  } catch(err) {
+    panel.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger)">Failed to load requests</div>';
+    console.error(err);
+  }
 }
 
 // Cancel (same as decline)
