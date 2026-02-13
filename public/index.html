@@ -20,6 +20,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 
 /* ─── RAIL ─── */
 #server-rail{background:#0a0d11;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:8px;border-right:1px solid var(--border);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.rail-icon[draggable="true"]{cursor:grab}.rail-icon[draggable="true"]:active{cursor:grabbing}
 #server-rail::-webkit-scrollbar{width:4px}
 #server-rail::-webkit-scrollbar-track{background:transparent}
 #server-rail::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -782,6 +783,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 <!-- CTX MENU -->
 <div id="ctx-menu">
   <div class="ctx-item" id="ctx-reply"><span class="ctx-ico">↩</span>Reply</div>
+  <div class="ctx-item" id="ctx-copy"><span class="ctx-ico">📋</span>Copy Text</div>
   <div class="ctx-item" id="ctx-react"><span class="ctx-ico">😀</span>React</div>
   <div class="ctx-item" id="ctx-edit" style="display:none"><span class="ctx-ico">✏️</span>Edit</div>
   <div class="ctx-sep" id="ctx-sep" style="display:none"></div>
@@ -2117,6 +2119,39 @@ function renderRail(){
     i.onclick=()=>{S.view='server';S.srvId=s.id;S.chId=s.channels[0].id;renderAll();autoSave()};
     i.onmouseenter = (e) => showTooltip(e, s.name);
     i.onmouseleave = hideTooltip;
+
+    // Drag-to-reorder
+    i.draggable = true;
+    i.dataset.srvId = s.id;
+    i.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', s.id);
+      i.style.opacity = '0.4';
+      hideTooltip();
+    });
+    i.addEventListener('dragend', () => { i.style.opacity = '1'; });
+    i.addEventListener('dragover', e => {
+      e.preventDefault();
+      i.style.borderTop = '2px solid var(--accent)';
+    });
+    i.addEventListener('dragleave', () => { i.style.borderTop = ''; });
+    i.addEventListener('drop', e => {
+      e.preventDefault();
+      i.style.borderTop = '';
+      const draggedId = isNaN(e.dataTransfer.getData('text/plain'))
+        ? e.dataTransfer.getData('text/plain')
+        : Number(e.dataTransfer.getData('text/plain'));
+      const targetId = s.id;
+      if (draggedId === targetId) return;
+      const fromIdx = S.servers.findIndex(sv => sv.id === draggedId);
+      const toIdx = S.servers.findIndex(sv => sv.id === targetId);
+      if (fromIdx > -1 && toIdx > -1) {
+        const [moved] = S.servers.splice(fromIdx, 1);
+        S.servers.splice(toIdx, 0, moved);
+        renderRail();
+        autoSave();
+      }
+    });
+
     el.appendChild(i);
   });
 
@@ -2521,6 +2556,13 @@ function closeChannelCtx() {
 }
 
 document.getElementById('ctx-reply').onclick =()=>{if(S.ctxId!==null)startReply(S.ctxId);closeCtx()};
+document.getElementById('ctx-copy').onclick  =()=>{
+  if(S.ctxId!==null){
+    const c=ch();const m=c.msgs.find(x=>x.id===S.ctxId);
+    if(m&&m.text)navigator.clipboard.writeText(m.text);
+  }
+  closeCtx();
+};
 document.getElementById('ctx-edit').onclick  =()=>{if(S.ctxId!==null)editMsg(S.ctxId);closeCtx()};
 document.getElementById('ctx-delete').onclick=()=>{if(S.ctxId!==null)deleteMsg(S.ctxId);closeCtx()};
 document.getElementById('ctx-react').onclick =()=>{if(S.ctxId!==null)reactToMsg(S.ctxId);closeCtx()};
@@ -2554,7 +2596,10 @@ document.getElementById('ctx-ch-delete').onclick = () => {
   closeChannelCtx();
 };
 
-document.addEventListener('click',()=>{closeCtx();closeChannelCtx()});
+document.addEventListener('click',(e)=>{
+  if(!e.target.closest('#ctx-menu'))closeCtx();
+  if(!e.target.closest('#ctx-channel'))closeChannelCtx();
+});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeCtx();closeChannelCtx();closePC()}});
 
 /* ─── PROFILE CARD ─── */
@@ -2859,6 +2904,11 @@ function editMsg(id){
     if(row) {
       const newRow = createMsgRow(m);
       row.replaceWith(newRow);
+    }
+    // Persist edit via WebSocket
+    if(typeof id === 'number') {
+      const isDM = c.type === 'dm';
+      editMessageViaWebSocket(id, m.text, isDM, isDM ? null : c.id, isDM ? c.id : null);
     }
     autoSave();
   }
