@@ -735,6 +735,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <div style="display:flex;gap:2px;flex-wrap:wrap">
   <button class="sb-btn" id="btn-srv-set" title="Server Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABgklEQVR4nOWUvU4CURCFPzEW/vAEYCcmEMROfQxsaH0Cf55CetdO409pCDQGtdRGHsLCThslQpRoCK65ejbZ3FxWVrcw8SQ3uzP3zJm9M3cH/gu2AN9aG0kmOHYkOExKvADcSnRZy5fP7MXCGHAFNIAKsAu8S7APTGr15RuIU1GMiU1FJVhzlOIV2AHyIZ5597Rn842GEzPAnUh7QAu4AUoRH1QSp6UYXxppF3k7RJiQb1zPeZWgq1UHctoLSmJi7qVRdSVYBV5EONeJAvG2oxQPQOaT8cW9kN9olBmCJaAnYlG+huxTCWaBpnwn4hRl96QRiWeRp2V3ZQdfazAr31PoBL5iiZugIzubRAJXieqym0pixM/kq4mzMEqJykOanFND7SY/AnNxmlx1XNOUnhk1tKNVC4mPfE3TP/jRFsW5Bva/+9GiRoVnjYqCZtBbnFERDLtLNbYi4YE17KasYeeJW1es0YiFvDWuV0LjOnyqX+HIUYoDEsSmI8F6kgn+Lj4A8qSo0U5gVbgAAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-profile" title="My Profile"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA70lEQVR4nO3UQUrDQBSH8R8umqVdWrrWK+hJxEPYHsNuRPFAurR1ZfEAuinVlUUUXVYGJiCCdNJObCn54A8heeGbl8wbGjaUAn2M8BETrnvxWS10Mcb8j9zHmqwUC6Q/5Vk77ydIy5zmFN9VEA9zit8riENtNuYVs5aO37biH/fWtauLOKMpc9ySme4CeS0nV0krfsph3HAht/Fe9k4b/pUdHGGAGzzjK2aKa5zhMNauTAcXeKkwx2FR59hbRtjGFT6XOKfLhHcvsZsqPcDTCsLfecR+ivgho7TMOEU8rUE8SRGfYJZR+orjFHHDdvENyZP0ibBvoI8AAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
+  <button class="sb-btn" id="btn-friends" title="Friends">👥</button>
   <button class="sb-btn" id="btn-ui" title="UI Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAtElEQVR4nO2UMQ7CMAxF38gNIrgOHYDTcAkWmHsVzsGCaFe4A6tRJSPSqjgJCVue5CWy/7edKFCeJXABjvyJFhCNU+nO98ACOKvBMMmIHfDwOhAjnkDjiXd6flCTVs9H5IqLxjDJLO+EWBxwnYj3wKqEgUsVJ2Et7hdxMnZ+8y50HWNg0RnijTaTZSBfxFFxKWXQz+w8WJ/6TKdUgyDVIEiwPva7FiPulsFWE3LEN+FBK3x4AdaaoWW8RUr6AAAAAElFTkSuQmCC" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-logout" title="Logout" style="color:var(--danger)">⏻</button>
 </div>
@@ -849,14 +850,19 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 </div>
 
 <!-- FRIEND REQUESTS MODAL -->
-<div id="friend-requests-overlay" class="ov">
-    <div class="modal" style="width: 500px">
-        <button id="friend-requests-close" class="modal-x">×</button>
-        <h3>👥 Friend Requests</h3>
-
-        <div id="friend-requests-list" style="margin-top: 16px;">
-        </div>
+<div class="ov" id="m-friends">
+  <div class="modal" style="width:460px">
+    <button class="modal-x" data-close="m-friends">✕</button>
+    <h3>👥 Friends</h3>
+    <div style="display:flex;gap:0;margin:12px 0 16px;border-bottom:2px solid var(--border)">
+      <button class="friends-tab active" id="tab-friends-list" style="flex:1;padding:10px;background:none;border:none;color:var(--text);font-weight:600;font-size:13px;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;font-family:Inter,sans-serif">Friends</button>
+      <button class="friends-tab" id="tab-friends-requests" style="flex:1;padding:10px;background:none;border:none;color:var(--dim);font-weight:600;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:Inter,sans-serif">Requests <span id="req-count-badge" style="display:none;background:var(--danger);color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;margin-left:4px">0</span></button>
     </div>
+    <div id="friends-tab-content" style="max-height:380px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent">
+      <div id="friends-list-panel"></div>
+      <div id="friends-requests-panel" style="display:none"></div>
+    </div>
+  </div>
 </div>
 
 <!-- MODALS -->\
@@ -4910,6 +4916,181 @@ async function declineFriendRequest(requestId, button) {
         alert('Failed to decline');
         button.disabled = false;
     }
+}
+
+/* ─── FRIENDS MODAL ─── */
+document.getElementById('btn-friends').onclick = () => {
+  openM('m-friends');
+  switchFriendsTab('list');
+  loadFriendsList();
+};
+
+document.getElementById('tab-friends-list').onclick = () => switchFriendsTab('list');
+document.getElementById('tab-friends-requests').onclick = () => switchFriendsTab('requests');
+
+function switchFriendsTab(tab) {
+  const listTab = document.getElementById('tab-friends-list');
+  const reqTab = document.getElementById('tab-friends-requests');
+  const listPanel = document.getElementById('friends-list-panel');
+  const reqPanel = document.getElementById('friends-requests-panel');
+
+  if (tab === 'list') {
+    listTab.style.color = 'var(--text)';
+    listTab.style.borderBottomColor = 'var(--accent)';
+    reqTab.style.color = 'var(--dim)';
+    reqTab.style.borderBottomColor = 'transparent';
+    listPanel.style.display = 'block';
+    reqPanel.style.display = 'none';
+    loadFriendsList();
+  } else {
+    reqTab.style.color = 'var(--text)';
+    reqTab.style.borderBottomColor = 'var(--accent)';
+    listTab.style.color = 'var(--dim)';
+    listTab.style.borderBottomColor = 'transparent';
+    listPanel.style.display = 'none';
+    reqPanel.style.display = 'block';
+    loadFriendRequests();
+  }
+}
+
+async function loadFriendsList() {
+  const panel = document.getElementById('friends-list-panel');
+  panel.innerHTML = '<div style="text-align:center;padding:20px;color:var(--dim)">Loading...</div>';
+  try {
+    const all = await api('/friends');
+    const friends = all.filter(f => f.status === 'accepted');
+    if (friends.length === 0) {
+      panel.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--dim);font-size:13px"><div style="font-size:36px;margin-bottom:8px;opacity:0.3">👥</div>No friends yet<br><span style="font-size:12px;opacity:0.7">Search for users to add friends</span></div>';
+      return;
+    }
+    panel.innerHTML = '';
+    friends.forEach(f => {
+      const u = f.user;
+      const avInner = u.avatar
+        ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+        : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s';
+      row.onmouseenter = () => row.style.background = 'var(--surface2)';
+      row.onmouseleave = () => row.style.background = '';
+      row.innerHTML = `
+        ${avInner}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.display_name || u.username}</div>
+          <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
+        </div>
+        <button class="btn sec" style="font-size:12px;padding:6px 12px" data-dm-uid="${u.id}">💬 DM</button>
+      `;
+      row.querySelector('[data-dm-uid]').onclick = async (e) => {
+        e.stopPropagation();
+        try {
+          const dm = await api('/dms', { method:'POST', body:{ userId: u.id } });
+          await loadDMsFromDatabase();
+          S.view = 'dms'; S.srvId = 'home'; S.chId = dm.id;
+          closeM('m-friends');
+          renderAll();
+        } catch(err) { console.error('DM open failed:', err); }
+      };
+      row.onclick = (e) => showPC(e, u.id);
+      panel.appendChild(row);
+    });
+  } catch(err) {
+    panel.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger)">Failed to load friends</div>';
+    console.error(err);
+  }
+}
+
+async function loadFriendRequests() {
+  const panel = document.getElementById('friends-requests-panel');
+  panel.innerHTML = '<div style="text-align:center;padding:20px;color:var(--dim)">Loading...</div>';
+  try {
+    const all = await api('/friends/requests');
+    const requests = all.filter(f => f.status === 'pending' && !f.isRequester);
+    const sent = all.filter(f => f.status === 'pending' && f.isRequester);
+
+    // Update badge
+    const badge = document.getElementById('req-count-badge');
+    if (requests.length > 0) {
+      badge.textContent = requests.length;
+      badge.style.display = 'inline';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if (requests.length === 0 && sent.length === 0) {
+      panel.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--dim);font-size:13px"><div style="font-size:36px;margin-bottom:8px;opacity:0.3">📭</div>No pending requests</div>';
+      return;
+    }
+
+    panel.innerHTML = '';
+
+    if (requests.length > 0) {
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:11px;font-weight:600;color:var(--dim);padding:4px 12px 8px;text-transform:uppercase;letter-spacing:0.5px';
+      label.textContent = `Incoming — ${requests.length}`;
+      panel.appendChild(label);
+
+      requests.forEach(r => {
+        const u = r.user;
+        const avInner = u.avatar
+          ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+          : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px';
+        row.innerHTML = `
+          ${avInner}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'}">${u.display_name || u.username}</div>
+            <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn pri" style="font-size:12px;padding:6px 12px" data-accept="${r.id}">✓ Accept</button>
+            <button class="btn dan" style="font-size:12px;padding:6px 12px" data-decline="${r.id}">✕</button>
+          </div>
+        `;
+        row.querySelector('[data-accept]').onclick = async (e) => {
+          await acceptFriendRequest(r.id, e.target);
+          loadFriendRequests();
+        };
+        row.querySelector('[data-decline]').onclick = async (e) => {
+          await declineFriendRequest(r.id, e.target);
+          loadFriendRequests();
+        };
+        panel.appendChild(row);
+      });
+    }
+
+    if (sent.length > 0) {
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:11px;font-weight:600;color:var(--dim);padding:12px 12px 8px;text-transform:uppercase;letter-spacing:0.5px';
+      label.textContent = `Sent — ${sent.length}`;
+      panel.appendChild(label);
+
+      sent.forEach(r => {
+        const u = r.user;
+        const avInner = u.avatar
+          ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+          : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;opacity:0.7';
+        row.innerHTML = `
+          ${avInner}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'}">${u.display_name || u.username}</div>
+            <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
+          </div>
+          <span style="font-size:12px;color:var(--dim)">⏳ Pending</span>
+        `;
+        panel.appendChild(row);
+      });
+    }
+  } catch(err) {
+    panel.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger)">Failed to load requests</div>';
+    console.error(err);
+  }
 }
 
 // Cancel (same as decline)
