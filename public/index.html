@@ -1942,7 +1942,9 @@ function upsertUser(userData) {
     existing.accent = userData.accent || existing.accent;
     existing.avatar = userData.avatar !== undefined ? userData.avatar : existing.avatar;
     existing.banner = userData.banner !== undefined ? userData.banner : existing.banner;
-    existing.bio = userData.bio !== undefined ? userData.bio : existing.bio;
+    existing.bio = userData.bio !== undefined ? userData.bio :
+    existing.bio;
+    if (userData.gallery) existing.gallery = userData.gallery;
   } else {
     S.users.push({
       id: userData.id,
@@ -1951,7 +1953,8 @@ function upsertUser(userData) {
       accent: userData.accent || '#3fb950',
       avatar: userData.avatar || '',
       banner: userData.banner || '',
-      bio: userData.bio || ''
+      bio: userData.bio || '',
+      gallery: userData.gallery || { items:[], bg:'', bgColor:'#0d1117', surface:'#161b22', acc1:'#58a6ff', acc2:'#3fb950', text:'#c9d1d9', border:'#30363d' }
     });
   }
 }
@@ -2244,7 +2247,7 @@ async function renderMsgs(){
   const wrap=document.getElementById('messages-wrap');
 
   // Load messages from API only if not already loaded
-  if (!_loadedChannels.has(c.id) && typeof c.id === 'number') {
+  if ((!_loadedChannels.has(c.id) || c.msgs.length === 0) && typeof c.id === 'number') {
     _loadedChannels.add(c.id);
     try {
       const endpoint = c.type === 'dm'
@@ -3331,15 +3334,17 @@ document.getElementById('btn-save-srv').onclick=async()=>{
   s.aesthetics.sidebarBlur = Number(document.getElementById('s-sidebar-blur').value);
   s.aesthetics.sidebarBgMode = document.getElementById('s-sidebar-bg-mode').value;
 
-  try {
-    const iF=document.getElementById('ub-srv-icon').querySelector('input').files[0];
-    if(iF) s.iconImg = await uploadFileToS3(iF);
-    const bF=document.getElementById('ub-srv-ban').querySelector('input').files[0];
-    if(bF) s.banner = await uploadFileToS3(bF);
-    const cF=document.getElementById('ub-srv-chbg').querySelector('input').files[0];
-    if(cF) s.defChBg = await uploadFileToS3(cF);
-  } catch(err) {
-    console.error('Failed to upload server images:', err);
+  const iF=document.getElementById('ub-srv-icon').querySelector('input').files[0];
+  if(iF) {
+    try { s.iconImg = await uploadFileToS3(iF); } catch(e) { s.iconImg = await readF(iF); }
+  }
+  const bF=document.getElementById('ub-srv-ban').querySelector('input').files[0];
+  if(bF) {
+    try { s.banner = await uploadFileToS3(bF); } catch(e) { s.banner = await readF(bF); }
+  }
+  const cF=document.getElementById('ub-srv-chbg').querySelector('input').files[0];
+  if(cF) {
+    try { s.defChBg = await uploadFileToS3(cF); } catch(e) { s.defChBg = await readF(cF); }
   }
 
   // Broadcast to all members via WebSocket
@@ -4422,24 +4427,6 @@ function sendMessageViaWebSocket(channelId, text, image = null, reply_to = null,
         return sendMessageViaHTTP(channelId, text, image, reply_to, isDM, dmChannelId);
     }
 
-    // Optimistic local insert — show message instantly
-    const c = ch();
-    if (c) {
-        const tempId = 'temp_' + Date.now();
-        c.msgs.push({
-            id: tempId,
-            uid: 'me',
-            text: text || '',
-            img: image || null,
-            reply: reply_to,
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
-            edited: false,
-            reactions: {},
-            _temp: true
-        });
-        renderMsgs();
-    }
-
     ws.send(JSON.stringify({
         type: 'new_message',
         channelId: channelId,
@@ -4508,13 +4495,7 @@ function handleNewChannelMessage(channelId, message) {
     const c = ch();
     if (!c || c.id !== channelId) return;
 
-    // Remove optimistic temp message if this is our own echo
-    if (message.user_id === S.me.id) {
-        const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
-        if (tempIdx > -1) c.msgs.splice(tempIdx, 1);
-    }
-
-    c.msgs.push({
+  c.msgs.push({
         id: message.id,
         uid: message.user_id === S.me.id ? 'me' : message.user_id,
         text: message.text || '',
