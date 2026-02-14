@@ -2478,37 +2478,23 @@ function createMsgRow(m, prevMsg) {
     reactHTML += '</div>';
   }
 
-  const displayTime = m.rawTime ? formatMsgTime(m.rawTime) : (m.time || '');
-
   const row = document.createElement('div');
-  row.className = 'msg-row' + (grouped ? ' grouped' : '');
+  row.className = 'msg-row';
   row.dataset.id = m.id;
   row.dataset.uid = m.uid;
-
-  if (grouped) {
-    row.innerHTML = `
-      <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
-      <div class="msg-body">
-        ${rpHTML}
-        <div class="msg-text"><span class="msg-time-inline">${displayTime}</span>${linkify(m.text)}</div>
-        ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
-        ${reactHTML}
-      </div>`;
-  } else {
-    row.innerHTML = `
-      <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
-      <div class="msg-body">
-        ${rpHTML}
-        <div class="msg-hd">
-          <span class="msg-name" style="color:${u.color}" data-uid="${m.uid}">${u.name}</span>
-          <span class="msg-time">${displayTime}</span>
-          ${m.edited ? '<span class="msg-edited">(edited)</span>' : ''}
-        </div>
-        <div class="msg-text">${linkify(m.text)}</div>
-        ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
-        ${reactHTML}
-      </div>`;
-  }
+  row.innerHTML = `
+    <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
+    <div class="msg-body">
+      ${rpHTML}
+      <div class="msg-hd">
+        <span class="msg-name" style="color:${u.color}" data-uid="${m.uid}">${u.name}</span>
+        <span class="msg-time">${m.time}</span>
+        ${m.edited ? '<span class="msg-edited">(edited)</span>' : ''}
+      </div>
+      <div class="msg-text">${linkify(m.text)}</div>
+      ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
+      ${reactHTML}
+    </div>`;
 
   // RIGHT-CLICK → context menu
   row.addEventListener('contextmenu', e => {
@@ -5335,6 +5321,4 @@ async function openDMWithUser(userId) {
 </script>
 </body>
 </html>
-
-
 
