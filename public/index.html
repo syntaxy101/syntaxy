@@ -1431,6 +1431,11 @@ async function loadDMsFromDatabase() {
         bg: dm.background || '',
         msgs: []
       });
+      
+      // Track last activity for sorting
+      if (dm.last_message_at || dm.updated_at || dm.created_at) {
+        S.dmLastActivity[dm.id] = dm.last_message_at || dm.updated_at || dm.created_at;
+      }
 
     // Add/update user so U() has fresh data
       const otherAvatar = dm.user1_id === S.me.id ? dm.user2_avatar : dm.user1_avatar;
@@ -1469,7 +1474,8 @@ const S={
   srvId:null, chId:null,
   view:'dms', // 'server' | 'dms'
   replyTo:null, pendingImg:null, pendingChBg:null, ctxId:null, ctxChId:null,
-  searchActive:false, editingChannelId:null, currentGalleryUserId:null
+  searchActive:false, editingChannelId:null, currentGalleryUserId:null,
+  unreadDMs:{}, dmLastActivity:{}
 };
 
 /* ─── INDEXEDDB PERSISTENCE ─── */
@@ -2213,6 +2219,16 @@ function renderSidebar(){
 
   const homeServer = S.servers.find(srv => srv.id === 'home');
   const dmList = homeServer ? homeServer.dms : [];
+  
+  // Sort DMs by last activity (most recent first)
+  dmList.sort((a, b) => {
+    const tA = S.dmLastActivity[a.id] || '';
+    const tB = S.dmLastActivity[b.id] || '';
+    if (tA && tB) return new Date(tB) - new Date(tA);
+    if (tA) return -1;
+    if (tB) return 1;
+    return 0;
+  });
   // ADD SEARCH USERS BUTTON
   const searchBtn = document.createElement('button');
   searchBtn.id = 'open-user-search-btn';
@@ -2241,9 +2257,15 @@ function renderSidebar(){
     const u=U(d.userId);
 
     const el=document.createElement('div');
-    el.className='ch-item'+(d.id===S.chId?' active':'');
+    const isUnread = S.unreadDMs[d.id];
+    el.className='ch-item'+(d.id===S.chId?' active':'')+(isUnread?' dm-unread':'');
     el.innerHTML=`<div class="dm-av-sm">${avHTML(u,24)}</div><span class="ch-name">${u.name}</span>`;
-    el.onclick=()=>{S.chId=d.id;renderAll();autoSave()};
+    el.onclick=()=>{
+      S.chId=d.id;
+      delete S.unreadDMs[d.id];
+      renderAll();
+      autoSave();
+    };
     body.appendChild(el);
   });
   } else {
@@ -5259,6 +5281,7 @@ async function openDMWithUser(userId) {
 </script>
 </body>
 </html>
+
 
 
 
