@@ -2365,9 +2365,26 @@ async function renderMsgs(){
     wrap.innerHTML = '';
     lastRenderedChId = S.chId;
 
+    // Clear unread for this channel
+    if (c.type === 'dm') {
+      delete S.unreadDMs[c.id];
+      renderSidebar();
+    }
+
     if(c.msgs && c.msgs.length > 0) {
-      c.msgs.forEach(m => {
-        const row = createMsgRow(m);
+      let lastDateLabel = null;
+      c.msgs.forEach((m, i) => {
+        // Date divider
+        const dateLabel = getMsgDateLabel(m.rawTime);
+        if (dateLabel && dateLabel !== lastDateLabel) {
+          const divider = document.createElement('div');
+          divider.className = 'msg-date-divider';
+          divider.textContent = dateLabel;
+          wrap.appendChild(divider);
+          lastDateLabel = dateLabel;
+        }
+        const prev = i > 0 ? c.msgs[i-1] : null;
+        const row = createMsgRow(m, prev);
         wrap.appendChild(row);
       });
     }
@@ -2385,7 +2402,23 @@ async function renderMsgs(){
 
   // Append only new messages with animation
   newMessages.forEach(m => {
-    const row = createMsgRow(m);
+    // Find previous message for grouping
+    const mIdx = c.msgs.indexOf(m);
+    const prev = mIdx > 0 ? c.msgs[mIdx - 1] : null;
+
+    // Date divider if needed
+    const dateLabel = getMsgDateLabel(m.rawTime);
+    if (dateLabel) {
+      const lastDivider = wrap.querySelector('.msg-date-divider:last-of-type');
+      if (!lastDivider || lastDivider.textContent !== dateLabel) {
+        const divider = document.createElement('div');
+        divider.className = 'msg-date-divider';
+        divider.textContent = dateLabel;
+        wrap.appendChild(divider);
+      }
+    }
+
+    const row = createMsgRow(m, prev);
     row.style.opacity = '0';
     row.style.transform = 'translateY(20px)';
     wrap.appendChild(row);
@@ -2445,23 +2478,37 @@ function createMsgRow(m, prevMsg) {
     reactHTML += '</div>';
   }
 
+  const displayTime = m.rawTime ? formatMsgTime(m.rawTime) : (m.time || '');
+
   const row = document.createElement('div');
-  row.className = 'msg-row';
+  row.className = 'msg-row' + (grouped ? ' grouped' : '');
   row.dataset.id = m.id;
   row.dataset.uid = m.uid;
-  row.innerHTML = `
-    <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
-    <div class="msg-body">
-      ${rpHTML}
-      <div class="msg-hd">
-        <span class="msg-name" style="color:${u.color}" data-uid="${m.uid}">${u.name}</span>
-        <span class="msg-time">${m.time}</span>
-        ${m.edited ? '<span class="msg-edited">(edited)</span>' : ''}
-      </div>
-      <div class="msg-text">${linkify(m.text)}</div>
-      ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
-      ${reactHTML}
-    </div>`;
+
+  if (grouped) {
+    row.innerHTML = `
+      <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
+      <div class="msg-body">
+        ${rpHTML}
+        <div class="msg-text"><span class="msg-time-inline">${displayTime}</span>${linkify(m.text)}</div>
+        ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
+        ${reactHTML}
+      </div>`;
+  } else {
+    row.innerHTML = `
+      <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
+      <div class="msg-body">
+        ${rpHTML}
+        <div class="msg-hd">
+          <span class="msg-name" style="color:${u.color}" data-uid="${m.uid}">${u.name}</span>
+          <span class="msg-time">${displayTime}</span>
+          ${m.edited ? '<span class="msg-edited">(edited)</span>' : ''}
+        </div>
+        <div class="msg-text">${linkify(m.text)}</div>
+        ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
+        ${reactHTML}
+      </div>`;
+  }
 
   // RIGHT-CLICK → context menu
   row.addEventListener('contextmenu', e => {
