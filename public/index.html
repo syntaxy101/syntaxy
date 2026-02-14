@@ -2402,23 +2402,7 @@ async function renderMsgs(){
 
   // Append only new messages with animation
   newMessages.forEach(m => {
-    // Find previous message for grouping
-    const mIdx = c.msgs.indexOf(m);
-    const prev = mIdx > 0 ? c.msgs[mIdx - 1] : null;
-
-    // Date divider if needed
-    const dateLabel = getMsgDateLabel(m.rawTime);
-    if (dateLabel) {
-      const lastDivider = wrap.querySelector('.msg-date-divider:last-of-type');
-      if (!lastDivider || lastDivider.textContent !== dateLabel) {
-        const divider = document.createElement('div');
-        divider.className = 'msg-date-divider';
-        divider.textContent = dateLabel;
-        wrap.appendChild(divider);
-      }
-    }
-
-    const row = createMsgRow(m, prev);
+    const row = createMsgRow(m);
     row.style.opacity = '0';
     row.style.transform = 'translateY(20px)';
     wrap.appendChild(row);
