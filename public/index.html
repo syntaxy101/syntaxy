@@ -16,7 +16,7 @@
 html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;overflow:hidden;user-select:none}
 
 /* ─── LAYOUT ─── */
-#layout{display:grid;grid-template-columns:68px var(--sidebar-w,240px) auto 1fr;height:100vh}
+#layout{display:grid;grid-template-columns:68px 240px 1fr;height:100vh}
 
 /* ─── RAIL ─── */
 #server-rail{background:#0a0d11;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:8px;border-right:1px solid var(--border);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
@@ -44,11 +44,6 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 /* ─── SIDEBAR ─── */
 #channel-sidebar{background:var(--surface);display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:visible;backdrop-filter:blur(var(--sidebar-blur, 10px));-webkit-backdrop-filter:blur(var(--sidebar-blur, 10px));position:relative;z-index:2}
 #sidebar-bg-layer{position:absolute;top:0;bottom:0;left:0;right:0;z-index:0;background-size:cover;background-position:center;opacity:0;transition:opacity .3s;pointer-events:none}
-#sidebar-resize-handle{width:4px;cursor:col-resize;background:transparent;transition:background .15s;z-index:50;flex-shrink:0;position:relative}
-#sidebar-resize-handle:hover,#sidebar-resize-handle.dragging{background:var(--accent)}
-#sidebar-resize-handle::after{content:'';position:absolute;top:0;bottom:0;left:-3px;right:-3px}
-#btn-friends{position:relative}
-.friends-notif-badge{position:absolute;top:1px;right:1px;background:var(--danger,#f85149);color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 4px;line-height:1;pointer-events:none}
 #sidebar-bg-layer.show-image{opacity:1}
 #sidebar-body{position:relative;z-index:1}
 #sidebar-header{padding:14px 14px 10px;display:flex;flex-direction:column;border-bottom:1px solid var(--border);flex-shrink:0;position:relative;z-index:2;background:var(--surface)}
@@ -108,6 +103,18 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 /* messages */
 #messages-wrap{position:relative;z-index:1;flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:2px}
 .msg-row{display:flex;gap:10px;align-items:flex-start;padding:5px 6px;border-radius:8px;position:relative;cursor:default;opacity:1;transform:translateY(0);transition:opacity .2s,transform .2s}
+.msg-row.grouped{padding-top:0;padding-bottom:0}
+.msg-row.grouped .msg-av{visibility:hidden;width:34px;height:0;min-height:0;margin:0;overflow:hidden}
+.msg-row.grouped .msg-hd{display:none}
+.msg-row.grouped:hover .msg-time-inline{display:inline;font-size:10px;color:var(--dim);margin-right:4px}
+.msg-time-inline{display:none}
+.msg-date-divider{text-align:center;padding:12px 0 4px;font-size:11px;font-weight:600;color:var(--dim);position:relative;letter-spacing:.3px}
+.msg-date-divider::before,.msg-date-divider::after{content:'';position:absolute;top:50%;height:1px;background:var(--border);width:calc(50% - 60px)}
+.msg-date-divider::before{left:0}
+.msg-date-divider::after{right:0}
+.ch-item.dm-unread .ch-name{color:var(--text)!important;font-weight:700}
+.ch-item.dm-unread{position:relative}
+.ch-item.dm-unread::after{content:'';position:absolute;right:8px;top:50%;transform:translateY(-50%);width:8px;height:8px;background:var(--danger,#f85149);border-radius:50%}
 .msg-row:hover{background:rgba(255,255,255,.035)}
 .msg-row.highlight{animation:highlight 1s ease}
 @keyframes highlight{0%,100%{background:rgba(255,255,255,.035)}50%{background:rgba(88,166,255,.15)}}
@@ -740,7 +747,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <div style="display:flex;gap:2px;flex-wrap:wrap">
   <button class="sb-btn" id="btn-srv-set" title="Server Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABgklEQVR4nOWUvU4CURCFPzEW/vAEYCcmEMROfQxsaH0Cf55CetdO409pCDQGtdRGHsLCThslQpRoCK65ejbZ3FxWVrcw8SQ3uzP3zJm9M3cH/gu2AN9aG0kmOHYkOExKvADcSnRZy5fP7MXCGHAFNIAKsAu8S7APTGr15RuIU1GMiU1FJVhzlOIV2AHyIZ5597Rn842GEzPAnUh7QAu4AUoRH1QSp6UYXxppF3k7RJiQb1zPeZWgq1UHctoLSmJi7qVRdSVYBV5EONeJAvG2oxQPQOaT8cW9kN9olBmCJaAnYlG+huxTCWaBpnwn4hRl96QRiWeRp2V3ZQdfazAr31PoBL5iiZugIzubRAJXieqym0pixM/kq4mzMEqJykOanFND7SY/AnNxmlx1XNOUnhk1tKNVC4mPfE3TP/jRFsW5Bva/+9GiRoVnjYqCZtBbnFERDLtLNbYi4YE17KasYeeJW1es0YiFvDWuV0LjOnyqX+HIUYoDEsSmI8F6kgn+Lj4A8qSo0U5gVbgAAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-profile" title="My Profile"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAAA70lEQVR4nO3UQUrDQBSH8R8umqVdWrrWK+hJxEPYHsNuRPFAurR1ZfEAuinVlUUUXVYGJiCCdNJObCn54A8heeGbl8wbGjaUAn2M8BETrnvxWS10Mcb8j9zHmqwUC6Q/5Vk77ydIy5zmFN9VEA9zit8riENtNuYVs5aO37biH/fWtauLOKMpc9ySme4CeS0nV0krfsph3HAht/Fe9k4b/pUdHGGAGzzjK2aKa5zhMNauTAcXeKkwx2FR59hbRtjGFT6XOKfLhHcvsZsqPcDTCsLfecR+ivgho7TMOEU8rUE8SRGfYJZR+orjFHHDdvENyZP0ibBvoI8AAAAASUVORK5CYII=" class="icon-img invert" alt=""></button>
-  <button class="sb-btn" id="btn-friends" title="Friends">👥<span class="friends-notif-badge" id="friends-notif-badge"></span></button>
+  <button class="sb-btn" id="btn-friends" title="Friends">👥</button>
   <button class="sb-btn" id="btn-ui" title="UI Settings"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAtElEQVR4nO2UMQ7CMAxF38gNIrgOHYDTcAkWmHsVzsGCaFe4A6tRJSPSqjgJCVue5CWy/7edKFCeJXABjvyJFhCNU+nO98ACOKvBMMmIHfDwOhAjnkDjiXd6flCTVs9H5IqLxjDJLO+EWBxwnYj3wKqEgUsVJ2Et7hdxMnZ+8y50HWNg0RnijTaTZSBfxFFxKWXQz+w8WJ/6TKdUgyDVIEiwPva7FiPulsFWE3LEN+FBK3x4AdaaoWW8RUr6AAAAAElFTkSuQmCC" class="icon-img invert" alt=""></button>
   <button class="sb-btn" id="btn-logout" title="Logout" style="color:var(--danger)">⏻</button>
 </div>
@@ -748,7 +755,6 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     </div>
     <div id="sidebar-body"></div>
   </div>
-  <div id="sidebar-resize-handle"></div>
   <div id="main-area">
     <div id="bg-layer"></div>
     <div id="chat-header">
@@ -1432,6 +1438,11 @@ async function loadDMsFromDatabase() {
         msgs: []
       });
 
+      // Track last activity for sorting
+      if (dm.last_message_at || dm.updated_at || dm.created_at) {
+        S.dmLastActivity[dm.id] = dm.last_message_at || dm.updated_at || dm.created_at;
+      }
+
     // Add/update user so U() has fresh data
       const otherAvatar = dm.user1_id === S.me.id ? dm.user2_avatar : dm.user1_avatar;
       const otherColor = dm.user1_id === S.me.id ? dm.user2_color : dm.user1_color;
@@ -1469,7 +1480,8 @@ const S={
   srvId:null, chId:null,
   view:'dms', // 'server' | 'dms'
   replyTo:null, pendingImg:null, pendingChBg:null, ctxId:null, ctxChId:null,
-  searchActive:false, editingChannelId:null, currentGalleryUserId:null
+  searchActive:false, editingChannelId:null, currentGalleryUserId:null,
+  unreadDMs:{}, dmLastActivity:{}
 };
 
 /* ─── INDEXEDDB PERSISTENCE ─── */
@@ -1916,6 +1928,33 @@ initApp();
 
 function T(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 
+function formatMsgTime(raw) {
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (isNaN(d)) return raw;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((today - msgDay) / 86400000);
+  const timeStr = d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  if (diffDays === 0) return timeStr;
+  if (diffDays === 1) return `Yesterday ${timeStr}`;
+  return `${d.toLocaleDateString([], {month:'2-digit',day:'2-digit',year:'numeric'})} ${timeStr}`;
+}
+
+function getMsgDateLabel(raw) {
+  if (!raw) return null;
+  const d = new Date(raw);
+  if (isNaN(d)) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((today - msgDay) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return d.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric',year:'numeric'});
+}
+
 /* ─── HELPERS ─── */
 // Cache for fetchFullUser - avoid repeated API calls
 const _userFetchCache = {};
@@ -2208,11 +2247,19 @@ function renderSidebar(){
   if(S.view==='dms'){
   document.getElementById('sidebar-title').textContent='Direct Messages';
   document.getElementById('btn-srv-set').style.display='none';
-  document.getElementById('btn-friends').style.display='';
-  updateFriendBadge();
 
   const homeServer = S.servers.find(srv => srv.id === 'home');
   const dmList = homeServer ? homeServer.dms : [];
+
+  // Sort DMs by last activity (most recent first)
+  dmList.sort((a, b) => {
+    const tA = S.dmLastActivity[a.id] || '';
+    const tB = S.dmLastActivity[b.id] || '';
+    if (tA && tB) return new Date(tB) - new Date(tA);
+    if (tA) return -1;
+    if (tB) return 1;
+    return 0;
+  });
   // ADD SEARCH USERS BUTTON
   const searchBtn = document.createElement('button');
   searchBtn.id = 'open-user-search-btn';
@@ -2241,9 +2288,15 @@ function renderSidebar(){
     const u=U(d.userId);
 
     const el=document.createElement('div');
-    el.className='ch-item'+(d.id===S.chId?' active':'');
+    const isUnread = S.unreadDMs[d.id];
+    el.className='ch-item'+(d.id===S.chId?' active':'')+(isUnread?' dm-unread':'');
     el.innerHTML=`<div class="dm-av-sm">${avHTML(u,24)}</div><span class="ch-name">${u.name}</span>`;
-    el.onclick=()=>{S.chId=d.id;renderAll();autoSave()};
+    el.onclick=()=>{
+      S.chId=d.id;
+      delete S.unreadDMs[d.id];
+      renderAll();
+      autoSave();
+    };
     body.appendChild(el);
   });
   } else {
@@ -2251,7 +2304,6 @@ function renderSidebar(){
     // channels
     // Show server settings button when not in DMs
   document.getElementById('btn-srv-set').style.display='flex';
-  document.getElementById('btn-friends').style.display='none';
     const cl=document.createElement('div'); cl.className='sec-label';
     cl.innerHTML='CHANNELS <button id="btn-addch">+</button>'; body.appendChild(cl);
     document.getElementById('btn-addch').onclick=()=>openM('m-newch');
@@ -2279,11 +2331,6 @@ function renderHeader(){
   document.getElementById('hd-name').textContent=c.name;
   document.getElementById('hd-desc').textContent=isDM?`DM with ${c.name}`:(c.desc||'');
   document.getElementById('msg-input').placeholder=isDM?`Message ${c.name}…`:`Message #${c.name}…`;
-
-  // Members button: servers only
-  document.getElementById('btn-members').style.display = (S.view === 'server') ? '' : 'none';
-  // Update friend request badge
-  updateFriendBadge();
 }
 
 function renderBg(){
@@ -2326,7 +2373,8 @@ async function renderMsgs(){
         text: m.text || '',
         img: m.image || null,
         reply: m.reply_to,
-        time: new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+        rawTime: m.created_at,
+        time: formatMsgTime(m.created_at),
         edited: m.edited,
         reactions: m.reactions || {},
         username: m.username,
@@ -2343,9 +2391,26 @@ async function renderMsgs(){
     wrap.innerHTML = '';
     lastRenderedChId = S.chId;
 
+    // Clear unread for this channel
+    if (c.type === 'dm') {
+      delete S.unreadDMs[c.id];
+      renderSidebar();
+    }
+
     if(c.msgs && c.msgs.length > 0) {
-      c.msgs.forEach(m => {
-        const row = createMsgRow(m);
+      let lastDateLabel = null;
+      c.msgs.forEach((m, i) => {
+        // Date divider
+        const dateLabel = getMsgDateLabel(m.rawTime);
+        if (dateLabel && dateLabel !== lastDateLabel) {
+          const divider = document.createElement('div');
+          divider.className = 'msg-date-divider';
+          divider.textContent = dateLabel;
+          wrap.appendChild(divider);
+          lastDateLabel = dateLabel;
+        }
+        const prev = i > 0 ? c.msgs[i-1] : null;
+        const row = createMsgRow(m, prev);
         wrap.appendChild(row);
       });
     }
@@ -2363,7 +2428,23 @@ async function renderMsgs(){
 
   // Append only new messages with animation
   newMessages.forEach(m => {
-    const row = createMsgRow(m);
+    // Find previous message for grouping
+    const mIdx = c.msgs.indexOf(m);
+    const prev = mIdx > 0 ? c.msgs[mIdx - 1] : null;
+
+    // Date divider if needed
+    const dateLabel = getMsgDateLabel(m.rawTime);
+    if (dateLabel) {
+      const lastDivider = wrap.querySelector('.msg-date-divider:last-of-type');
+      if (!lastDivider || lastDivider.textContent !== dateLabel) {
+        const divider = document.createElement('div');
+        divider.className = 'msg-date-divider';
+        divider.textContent = dateLabel;
+        wrap.appendChild(divider);
+      }
+    }
+
+    const row = createMsgRow(m, prev);
     row.style.opacity = '0';
     row.style.transform = 'translateY(20px)';
     wrap.appendChild(row);
@@ -2380,7 +2461,7 @@ async function renderMsgs(){
   }
 }
 
-function createMsgRow(m) {
+function createMsgRow(m, prevMsg) {
   const c = ch();
   const isMe = m.uid === 'me';
   const u = U(m.uid);
@@ -2390,6 +2471,13 @@ function createMsgRow(m) {
     d.className = 'sys-msg';
     d.textContent = m.text;
     return d;
+  }
+
+  // Grouping: same user, within 5 minutes, no reply, prev wasn't system
+  let grouped = false;
+  if (prevMsg && !prevMsg.sys && prevMsg.uid === m.uid && !m.reply && m.rawTime && prevMsg.rawTime) {
+    const diff = new Date(m.rawTime) - new Date(prevMsg.rawTime);
+    if (diff < 300000 && diff >= 0) grouped = true;
   }
 
   let rpHTML = '';
@@ -2416,23 +2504,37 @@ function createMsgRow(m) {
     reactHTML += '</div>';
   }
 
+  const displayTime = m.rawTime ? formatMsgTime(m.rawTime) : (m.time || '');
+
   const row = document.createElement('div');
-  row.className = 'msg-row';
+  row.className = 'msg-row' + (grouped ? ' grouped' : '');
   row.dataset.id = m.id;
   row.dataset.uid = m.uid;
-  row.innerHTML = `
-    <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
-    <div class="msg-body">
-      ${rpHTML}
-      <div class="msg-hd">
-        <span class="msg-name" style="color:${u.color}" data-uid="${m.uid}">${u.name}</span>
-        <span class="msg-time">${m.time}</span>
-        ${m.edited ? '<span class="msg-edited">(edited)</span>' : ''}
-      </div>
-      <div class="msg-text">${linkify(m.text)}</div>
-      ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
-      ${reactHTML}
-    </div>`;
+
+  if (grouped) {
+    row.innerHTML = `
+      <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
+      <div class="msg-body">
+        ${rpHTML}
+        <div class="msg-text"><span class="msg-time-inline">${displayTime}</span>${linkify(m.text)}</div>
+        ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
+        ${reactHTML}
+      </div>`;
+  } else {
+    row.innerHTML = `
+      <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
+      <div class="msg-body">
+        ${rpHTML}
+        <div class="msg-hd">
+          <span class="msg-name" style="color:${u.color}" data-uid="${m.uid}">${u.name}</span>
+          <span class="msg-time">${displayTime}</span>
+          ${m.edited ? '<span class="msg-edited">(edited)</span>' : ''}
+        </div>
+        <div class="msg-text">${linkify(m.text)}</div>
+        ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
+        ${reactHTML}
+      </div>`;
+  }
 
   // RIGHT-CLICK → context menu
   row.addEventListener('contextmenu', e => {
@@ -2665,9 +2767,9 @@ async function showPC(e,uid){
   document.getElementById('pc-name').style.color=primary;
   document.getElementById('pc-bio').textContent=u.bio||'No bio yet';
 
-  // Friend badge - managed by async status check below
+  // Friend badge with user's colors
   const friendBadge = document.getElementById('pc-friend');
-  friendBadge.style.display='none';
+  friendBadge.style.display=(u.friends && uid !== 'me')?'inline':'none';
   friendBadge.style.background = `${secondary}22`;
   friendBadge.style.color = secondary;
 
@@ -2717,72 +2819,25 @@ async function showPC(e,uid){
     };
     act.appendChild(dmB);
 
-    // Friend btn - check real friendship status from API
+    // Friend btn
     const frB=document.createElement('button');
-    frB.className='pc-btn pend';
-    frB.innerHTML='⏳ Loading...';
-    frB.disabled=true;
-    act.appendChild(frB);
-
-    // Async check friendship status
-    if (typeof uid === 'number') {
-      (async () => {
-        try {
-          const statusData = await api(`/friends/status/${uid}`);
-          if (statusData.status === 'accepted') {
-            frB.className='pc-btn pend';
-            frB.innerHTML='✓ Friends';
-            frB.disabled=true;
-            // Also show the friend badge
-            friendBadge.style.display='inline';
-          } else if (statusData.status === 'pending_sent') {
-            frB.className='pc-btn pend';
-            frB.innerHTML='⏳ Pending';
-            frB.disabled=true;
-            friendBadge.style.display='none';
-          } else if (statusData.status === 'pending_received') {
-            frB.className='pc-btn pri';
-            frB.style.background = gradient;
-            frB.innerHTML='✓ Accept';
-            frB.disabled=false;
-            frB.onclick=async()=>{
-              frB.disabled=true;
-              frB.innerHTML='Accepting...';
-              await acceptFriendRequest(statusData.requestId, frB);
-              frB.className='pc-btn pend';
-              frB.innerHTML='✓ Friends';
-              friendBadge.style.display='inline';
-              updateFriendBadge();
-            };
-            friendBadge.style.display='none';
-          } else {
-            frB.className='pc-btn pri';
-            frB.style.background = gradient;
-            frB.innerHTML='+ Add';
-            frB.disabled=false;
-            frB.onclick=async()=>{
-              frB.disabled=true;
-              frB.innerHTML='Sending...';
-              try {
-                await sendFriendRequest(uid, frB);
-                frB.className='pc-btn pend';
-                frB.innerHTML='⏳ Pending';
-              } catch(err) {
-                frB.innerHTML='+ Add';
-                frB.disabled=false;
-              }
-            };
-            friendBadge.style.display='none';
-          }
-        } catch(err) {
-          frB.className='pc-btn pri';
-          frB.style.background = gradient;
-          frB.innerHTML='+ Add';
-          frB.disabled=false;
-          friendBadge.style.display='none';
-        }
-      })();
+    if(u.friends){
+      frB.className='pc-btn pend';
+      frB.innerHTML='✓ Friends';
+    } else if(u._fp){
+      frB.className='pc-btn pend';
+      frB.innerHTML='⏳ Pending';
+    } else {
+      frB.className='pc-btn pri';
+      frB.style.background = gradient;
+      frB.innerHTML='+ Add';
+      frB.onclick=()=>{
+        u._fp=true;
+        updatePC(uid);
+        setTimeout(()=>{u._fp=false;u.friends=true;updatePC(uid);autoSave()},2000);
+      };
     }
+    act.appendChild(frB);
 
     // Gallery button for other users
     const galB = document.createElement('button');
@@ -2824,7 +2879,14 @@ async function showPC(e,uid){
 
 function updatePC(uid){
   const u=U(uid);
-  // Friend badge is now managed by the async status check in showPC
+  document.getElementById('pc-friend').style.display=u.friends?'inline':'none';
+  const act=document.getElementById('pc-actions');
+  // rebuild just the friend btn (second child)
+  const btns=act.querySelectorAll('.pc-btn');
+  if(btns.length<2) return;
+  const fb=btns[1];
+  if(u.friends){fb.className='pc-btn pend';fb.innerHTML='✓ Friends';fb.onclick=null}
+  else if(u._fp){fb.className='pc-btn pend';fb.innerHTML='⏳ Pending';fb.onclick=null}
 }
 
 function closePC(){document.getElementById('profile-card').style.display='none'}
@@ -2903,6 +2965,7 @@ async function send() {
     sendMessageViaWebSocket(channelId, text, tempImg, tempReply, false, null);
   } else if (isDM) {
     // For DMs, send via WebSocket if available
+    S.dmLastActivity[dmChannelId] = new Date().toISOString();
     sendMessageViaWebSocket(null, text, tempImg, tempReply, true, dmChannelId);
   } else {
     // Local-only (demo channels)
@@ -2912,6 +2975,7 @@ async function send() {
       text,
       img: tempImg,
       reply: tempReply,
+      rawTime: new Date().toISOString(),
       time: T(),
       edited: false,
       reactions: {}
@@ -4464,13 +4528,6 @@ function initWebSocket() {
                     console.error('WebSocket error:', data.message);
                     break;
 
-                case 'friend_request_received':
-                case 'friend_request_sent':
-                case 'friend_request_accepted':
-                case 'friend_request_declined':
-                    updateFriendBadge();
-                    break;
-
                 case 'dm_bg_changed': {
                     const homeServer = S.servers.find(s => s.id === 'home');
                     if (homeServer) {
@@ -4618,7 +4675,8 @@ function handleNewChannelMessage(channelId, message) {
         text: message.text || '',
         img: message.image || null,
         reply: message.reply_to,
-        time: new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+        rawTime: message.created_at,
+        time: formatMsgTime(message.created_at),
         edited: message.edited,
         reactions: message.reactions || {},
         username: message.username,
@@ -4640,22 +4698,37 @@ function handleNewDMMessage(dmChannelId, message) {
       avatar: message.avatar
     });
 
-    const c = ch();
-    if (!c || c.id !== dmChannelId) return;
+    // Track activity for sorting
+    S.dmLastActivity[dmChannelId] = message.created_at || new Date().toISOString();
 
-  // Remove optimistic temp message if this is our own echo
-    if (message.user_id === S.me.id) {
-        const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
-        if (tempIdx > -1) c.msgs.splice(tempIdx, 1);
+    // Mark as unread if not currently viewing this DM
+    const c = ch();
+    const isViewingThis = c && c.id === dmChannelId;
+    if (!isViewingThis && message.user_id !== S.me.id) {
+      S.unreadDMs[dmChannelId] = true;
+      renderSidebar();
     }
 
-    c.msgs.push({
+    // Find the DM channel and add message
+    const homeServer = S.servers.find(s => s.id === 'home');
+    if (!homeServer) return;
+    const dmCh = homeServer.dms.find(d => d.id === dmChannelId);
+    if (!dmCh) return;
+
+    // Remove optimistic temp message if this is our own echo
+    if (message.user_id === S.me.id) {
+        const tempIdx = dmCh.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
+        if (tempIdx > -1) dmCh.msgs.splice(tempIdx, 1);
+    }
+
+    dmCh.msgs.push({
         id: message.id,
         uid: message.user_id === S.me.id ? 'me' : message.user_id,
         text: message.text || '',
         img: message.image || null,
         reply: message.reply_to,
-        time: new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+        rawTime: message.created_at,
+        time: formatMsgTime(message.created_at),
         edited: message.edited,
         reactions: message.reactions || {},
         username: message.username,
@@ -4663,7 +4736,9 @@ function handleNewDMMessage(dmChannelId, message) {
         sys: message.is_system || false
     });
 
-    renderMsgs();
+    if (isViewingThis) {
+      renderMsgs();
+    }
     autoSave();
 }
 
@@ -4903,13 +4978,9 @@ async function sendFriendRequest(friendId, button) {
             }));
         }
 
-        // Refresh search results if search is open
-        const searchInput = document.getElementById('user-search-input');
-        if (searchInput && searchInput.value) {
-          searchUsers(searchInput.value);
-        }
-        // Update badge
-        updateFriendBadge();
+        // Refresh
+        const query = document.getElementById('user-search-input').value;
+        searchUsers(query);
 
     } catch (err) {
         console.error('Send request error:', err);
@@ -4949,10 +5020,9 @@ async function acceptFriendRequest(requestId, button) {
             }));
         }
 
-        // Refresh search results if search is open
-        const searchInput = document.getElementById('user-search-input');
-        if (searchInput && searchInput.value) searchUsers(searchInput.value);
-        updateFriendBadge();
+        // Refresh
+        const query = document.getElementById('user-search-input').value;
+        if (query) searchUsers(query);
 
     } catch (err) {
         console.error('Accept error:', err);
@@ -4973,10 +5043,9 @@ async function declineFriendRequest(requestId, button) {
 
         if (!res.ok) throw new Error('Failed');
 
-        // Refresh search results if search is open
-        const searchInput = document.getElementById('user-search-input');
-        if (searchInput && searchInput.value) searchUsers(searchInput.value);
-        updateFriendBadge();
+        // Refresh
+        const query = document.getElementById('user-search-input').value;
+        if (query) searchUsers(query);
 
     } catch (err) {
         console.error('Decline error:', err);
@@ -5164,61 +5233,6 @@ async function loadFriendRequests() {
 async function cancelFriendRequest(requestId, button) {
     await declineFriendRequest(requestId, button);
 }
-
-/* ─── FRIEND REQUEST BADGE ─── */
-async function updateFriendBadge() {
-  try {
-    if (!getToken()) return;
-    const all = await api('/friends/requests');
-    const incoming = all.filter(f => f.status === 'pending' && !f.isRequester);
-    const badge = document.getElementById('friends-notif-badge');
-    const modalBadge = document.getElementById('req-count-badge');
-    if (incoming.length > 0) {
-      const label = incoming.length > 10 ? '10+' : String(incoming.length);
-      badge.textContent = label;
-      badge.style.display = 'flex';
-      if (modalBadge) { modalBadge.textContent = label; modalBadge.style.display = 'inline'; }
-    } else {
-      badge.style.display = 'none';
-      if (modalBadge) modalBadge.style.display = 'none';
-    }
-  } catch(e) { /* silent */ }
-}
-
-/* ─── SIDEBAR RESIZE ─── */
-(function() {
-  const handle = document.getElementById('sidebar-resize-handle');
-  const layout = document.getElementById('layout');
-  let dragging = false, startX, startW;
-  const MIN_W = 120, MAX_W = 360;
-
-  handle.addEventListener('mousedown', e => {
-    e.preventDefault();
-    dragging = true;
-    startX = e.clientX;
-    const computed = getComputedStyle(layout);
-    const cols = computed.gridTemplateColumns.split(/\s+/);
-    startW = parseFloat(cols[1]) || 240;
-    handle.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    const delta = e.clientX - startX;
-    const newW = Math.min(MAX_W, Math.max(MIN_W, startW + delta));
-    layout.style.setProperty('--sidebar-w', newW + 'px');
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (!dragging) return;
-    dragging = false;
-    handle.classList.remove('dragging');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  });
-})();
 
 // Open DM
 async function openDMWithUser(userId) {
