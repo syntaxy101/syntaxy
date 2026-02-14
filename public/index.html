@@ -2402,7 +2402,7 @@ async function renderMsgs(){
   }
 }
 
-function createMsgRow(m) {
+function createMsgRow(m, prevMsg) {
   const c = ch();
   const isMe = m.uid === 'me';
   const u = U(m.uid);
@@ -2412,6 +2412,13 @@ function createMsgRow(m) {
     d.className = 'sys-msg';
     d.textContent = m.text;
     return d;
+  }
+
+  // Grouping: same user, within 5 minutes, no reply, prev wasn't system
+  let grouped = false;
+  if (prevMsg && !prevMsg.sys && prevMsg.uid === m.uid && !m.reply && m.rawTime && prevMsg.rawTime) {
+    const diff = new Date(m.rawTime) - new Date(prevMsg.rawTime);
+    if (diff < 300000 && diff >= 0) grouped = true;
   }
 
   let rpHTML = '';
