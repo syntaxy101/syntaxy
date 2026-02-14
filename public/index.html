@@ -2365,26 +2365,9 @@ async function renderMsgs(){
     wrap.innerHTML = '';
     lastRenderedChId = S.chId;
 
-    // Clear unread for this channel
-    if (c.type === 'dm') {
-      delete S.unreadDMs[c.id];
-      renderSidebar();
-    }
-
     if(c.msgs && c.msgs.length > 0) {
-      let lastDateLabel = null;
-      c.msgs.forEach((m, i) => {
-        // Date divider
-        const dateLabel = getMsgDateLabel(m.rawTime);
-        if (dateLabel && dateLabel !== lastDateLabel) {
-          const divider = document.createElement('div');
-          divider.className = 'msg-date-divider';
-          divider.textContent = dateLabel;
-          wrap.appendChild(divider);
-          lastDateLabel = dateLabel;
-        }
-        const prev = i > 0 ? c.msgs[i-1] : null;
-        const row = createMsgRow(m, prev);
+      c.msgs.forEach(m => {
+        const row = createMsgRow(m);
         wrap.appendChild(row);
       });
     }
@@ -5305,5 +5288,4 @@ async function openDMWithUser(userId) {
 </script>
 </body>
 </html>
-
 
