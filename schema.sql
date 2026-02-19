@@ -101,6 +101,54 @@ CREATE INDEX IF NOT EXISTS idx_server_members_server ON server_members(server_id
 CREATE INDEX IF NOT EXISTS idx_server_members_user ON server_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_channels_server ON channels(server_id);
 
+-- Explore posts table
+CREATE TABLE IF NOT EXISTS posts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL,
+    content_type VARCHAR(20) NOT NULL DEFAULT 'text',
+    content_data TEXT,
+    community VARCHAR(100),
+    views INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Post interactions (likes/dislikes)
+CREATE TABLE IF NOT EXISTS post_interactions (
+    id SERIAL PRIMARY KEY,
+    post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('like', 'dislike')),
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(post_id, user_id)
+);
+
+-- Comments table
+CREATE TABLE IF NOT EXISTS comments (
+    id SERIAL PRIMARY KEY,
+    post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Comment interactions (likes/dislikes)
+CREATE TABLE IF NOT EXISTS comment_interactions (
+    id SERIAL PRIMARY KEY,
+    comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('like', 'dislike')),
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(comment_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_post_interactions_post ON post_interactions(post_id);
+CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_comment_interactions_comment ON comment_interactions(comment_id);
+
 -- Server invites table
 CREATE TABLE IF NOT EXISTS server_invites (
     id SERIAL PRIMARY KEY,
@@ -111,4 +159,5 @@ CREATE TABLE IF NOT EXISTS server_invites (
     max_uses INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
 
