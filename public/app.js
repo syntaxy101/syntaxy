@@ -901,6 +901,12 @@ function renderSidebar(){
 
   if(S.view==='dms'){
   document.getElementById('sidebar-title').textContent='Direct Messages';
+  
+  // Add explore planet button next to the title
+  const titleEl = document.getElementById('sidebar-title');
+  titleEl.innerHTML = 'Direct Messages <button class="explore-planet-btn" id="btn-explore" title="Explore">🪐</button>';
+  document.getElementById('btn-explore').onclick = () => openExplorePage();
+  
   document.getElementById('btn-srv-set').style.display='none';
   document.getElementById('btn-friends').style.display='';
   updateFriendBadge();
@@ -3973,4 +3979,532 @@ async function openDMWithUser(userId) {
         alert('Failed to open DM');
     }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   EXPLORE PAGE
+   ═══════════════════════════════════════════════════════════ */
+
+let explorePosts = [];
+let exploreLoadedCount = 0;
+const explorePerLoad = 10;
+let exploreCurrentCommentPostId = null;
+let exploreUploadedFile = null;
+
+function openExplorePage() {
+  document.getElementById('explore-page').classList.add('show');
+  explorePosts = [];
+  exploreLoadedCount = 0;
+  document.getElementById('explore-feed').innerHTML = '';
+  loadExplorePosts();
+}
+
+function closeExplorePage() {
+  document.getElementById('explore-page').classList.remove('show');
+}
+
+// Exit button
+document.getElementById('btn-exit-explore').addEventListener('click', closeExplorePage);
+
+// Upload button
+document.getElementById('btn-explore-upload').addEventListener('click', () => {
+  document.getElementById('explore-upload-modal').classList.add('active');
+});
+
+// Tab switching
+document.getElementById('explore-tab-explore').addEventListener('click', () => {
+  document.getElementById('explore-tab-explore').classList.add('active');
+  document.getElementById('explore-tab-following').classList.remove('active');
+  explorePosts = [];
+  exploreLoadedCount = 0;
+  document.getElementById('explore-feed').innerHTML = '';
+  loadExplorePosts();
+});
+
+document.getElementById('explore-tab-following').addEventListener('click', () => {
+  document.getElementById('explore-tab-following').classList.add('active');
+  document.getElementById('explore-tab-explore').classList.remove('active');
+  // Following feed - for now just loads explore
+  explorePosts = [];
+  exploreLoadedCount = 0;
+  document.getElementById('explore-feed').innerHTML = '';
+  loadExplorePosts();
+});
+
+// Search
+document.getElementById('explore-search').addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase().trim();
+  const feed = document.getElementById('explore-feed');
+  if (!query) {
+    // Show all posts
+    feed.querySelectorAll('.explore-post').forEach(p => p.style.display = '');
+    return;
+  }
+  feed.querySelectorAll('.explore-post').forEach(p => {
+    const title = (p.querySelector('.explore-post-title')?.textContent || '').toLowerCase();
+    const body = (p.querySelector('.explore-post-body')?.textContent || '').toLowerCase();
+    const user = (p.querySelector('.explore-post-user')?.textContent || '').toLowerCase();
+    p.style.display = (title.includes(query) || body.includes(query) || user.includes(query)) ? '' : 'none';
+  });
+});
+
+// Format numbers
+function exploreFormatNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return n.toString();
+}
+
+// Load posts
+async function loadExplorePosts() {
+  const feed = document.getElementById('explore-feed');
+  const loader = document.createElement('div');
+  loader.className = 'explore-loading';
+  loader.innerHTML = '<div class="explore-spinner"></div>Loading posts...';
+  feed.appendChild(loader);
+
+  try {
+    const posts = await api(`/posts?limit=${explorePerLoad}&offset=${exploreLoadedCount}`);
+    feed.removeChild(loader);
+
+    if (posts.length === 0 && exploreLoadedCount === 0) {
+      feed.innerHTML = '<div class="explore-loading">No posts yet. Create the first one!</div>';
+      return;
+    }
+
+    posts.forEach((post, i) => {
+      const el = createExplorePost(post, i);
+      feed.appendChild(el);
+      explorePosts.push(post);
+      // Increment view
+      api(`/posts/${post.id}/view`, { method: 'POST' }).catch(() => {});
+    });
+
+    exploreLoadedCount += posts.length;
+
+    if (posts.length < explorePerLoad) {
+      const end = document.createElement('div');
+      end.className = 'explore-loading';
+      end.textContent = "You've reached the end!";
+      feed.appendChild(end);
+    }
+  } catch (err) {
+    feed.removeChild(loader);
+    console.error('Error loading posts:', err);
+    feed.innerHTML = '<div class="explore-loading">Failed to load posts. Please make sure you are logged in.</div>';
+  }
+}
+
+// Infinite scroll
+document.getElementById('explore-body').addEventListener('scroll', () => {
+  const body = document.getElementById('explore-body');
+  if (body.scrollTop + body.clientHeight >= body.scrollHeight - 120) {
+    // Don't double-load
+    if (!document.querySelector('#explore-feed .explore-loading')) {
+      loadExplorePosts();
+    }
+  }
+});
+
+function createExplorePost(post, index) {
+  const div = document.createElement('div');
+  div.className = 'explore-post';
+  div.style.animationDelay = `${index * 0.08}s`;
+  div.dataset.postId = post.id;
+
+  const username = post.display_name || post.username;
+  const communityTag = post.community ? `<span class="explore-post-community">${post.community}</span>` : '';
+  let contentHTML = '';
+  if (post.content_type === 'text') {
+    contentHTML = `<p>${post.content_data || ''}</p>`;
+  } else if (post.content_type === 'image') {
+    contentHTML = `<img src="${post.content_data}" alt="Post image">`;
+  }
+
+  div.innerHTML = `
+    <div class="explore-post-header">
+      <div class="explore-post-user" data-uid="${post.user_id}">
+        <span class="explore-post-user-dot"></span>
+        ${username}
+      </div>
+      ${communityTag}
+    </div>
+    <h2 class="explore-post-title">${post.title}</h2>
+    <div class="explore-post-body">${contentHTML}</div>
+    <div class="explore-post-actions">
+      <button class="explore-act-btn view-act">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>${exploreFormatNum(post.views || 0)}</span>
+      </button>
+      <button class="explore-act-btn like-act ${post.user_liked ? 'liked' : ''}" data-post-id="${post.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+        <span class="like-count">${exploreFormatNum(post.likes)}</span>
+      </button>
+      <button class="explore-act-btn dislike-act ${post.user_disliked ? 'disliked' : ''}" data-post-id="${post.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+        <span class="dislike-count">${exploreFormatNum(post.dislikes)}</span>
+      </button>
+      <button class="explore-act-btn comment-act" data-post-id="${post.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Comment</span>
+      </button>
+      <button class="explore-act-btn share-act">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        <span>Share</span>
+      </button>
+    </div>
+  `;
+
+  // Username click -> profile popup
+  div.querySelector('.explore-post-user').addEventListener('click', (e) => {
+    const uid = parseInt(post.user_id);
+    if (uid === S.me.id) {
+      showPC(e, 'me');
+    } else {
+      // Make sure user is in the users array
+      upsertUser({ id: uid, name: post.display_name || post.username, color: post.color || '#58a6ff', avatar: post.avatar || '' });
+      showPC(e, uid);
+    }
+  });
+
+  // Like
+  const likeBtn = div.querySelector('.like-act');
+  const dislikeBtn = div.querySelector('.dislike-act');
+  const likeCount = div.querySelector('.like-count');
+  const dislikeCount = div.querySelector('.dislike-count');
+
+  likeBtn.addEventListener('click', async () => {
+    try {
+      if (post.user_liked) {
+        await api(`/posts/${post.id}/interact`, { method: 'DELETE' });
+        post.user_liked = false;
+        likeBtn.classList.remove('liked');
+        post.likes--;
+      } else {
+        await api(`/posts/${post.id}/interact`, { method: 'POST', body: { type: 'like' } });
+        post.user_liked = true;
+        likeBtn.classList.add('liked');
+        post.likes++;
+        if (post.user_disliked) {
+          post.user_disliked = false;
+          dislikeBtn.classList.remove('disliked');
+          post.dislikes--;
+        }
+      }
+      likeCount.textContent = exploreFormatNum(post.likes);
+      dislikeCount.textContent = exploreFormatNum(post.dislikes);
+    } catch (err) { console.error('Like error:', err); }
+  });
+
+  // Dislike
+  dislikeBtn.addEventListener('click', async () => {
+    try {
+      if (post.user_disliked) {
+        await api(`/posts/${post.id}/interact`, { method: 'DELETE' });
+        post.user_disliked = false;
+        dislikeBtn.classList.remove('disliked');
+        post.dislikes--;
+      } else {
+        await api(`/posts/${post.id}/interact`, { method: 'POST', body: { type: 'dislike' } });
+        post.user_disliked = true;
+        dislikeBtn.classList.add('disliked');
+        post.dislikes++;
+        if (post.user_liked) {
+          post.user_liked = false;
+          likeBtn.classList.remove('liked');
+          post.likes--;
+        }
+      }
+      likeCount.textContent = exploreFormatNum(post.likes);
+      dislikeCount.textContent = exploreFormatNum(post.dislikes);
+    } catch (err) { console.error('Dislike error:', err); }
+  });
+
+  // Comment button
+  div.querySelector('.comment-act').addEventListener('click', () => {
+    openExploreComments(post.id);
+  });
+
+  // Share button
+  div.querySelector('.share-act').addEventListener('click', () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(`${window.location.origin}/?post=${post.id}`);
+      div.querySelector('.share-act span').textContent = 'Copied!';
+      setTimeout(() => { div.querySelector('.share-act span').textContent = 'Share'; }, 1500);
+    }
+  });
+
+  return div;
+}
+
+/* ─── COMMENTS ─── */
+
+async function openExploreComments(postId) {
+  exploreCurrentCommentPostId = postId;
+  const modal = document.getElementById('explore-comment-modal');
+  modal.classList.add('active');
+
+  // Show post preview
+  const post = explorePosts.find(p => p.id == postId);
+  const preview = document.getElementById('explore-modal-post-preview');
+  if (post) {
+    const username = post.display_name || post.username;
+    const communityTag = post.community ? `<span class="explore-post-community">${post.community}</span>` : '';
+    let contentHTML = post.content_type === 'text'
+      ? `<p>${post.content_data || ''}</p>`
+      : `<img src="${post.content_data}" alt="Post image" style="max-height:200px">`;
+    preview.innerHTML = `
+      <div class="explore-post-header">
+        <div class="explore-post-user"><span class="explore-post-user-dot"></span>${username}</div>
+        ${communityTag}
+      </div>
+      <h2 class="explore-post-title">${post.title}</h2>
+      <div class="explore-post-body">${contentHTML}</div>
+    `;
+  }
+
+  await loadExploreComments(postId);
+}
+
+function closeExploreComments() {
+  document.getElementById('explore-comment-modal').classList.remove('active');
+  document.getElementById('explore-comment-input').value = '';
+  exploreCurrentCommentPostId = null;
+}
+
+document.getElementById('explore-close-comments').addEventListener('click', closeExploreComments);
+document.getElementById('explore-comment-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'explore-comment-modal') closeExploreComments();
+});
+
+document.getElementById('explore-submit-comment').addEventListener('click', async () => {
+  const input = document.getElementById('explore-comment-input');
+  const text = input.value.trim();
+  if (text && exploreCurrentCommentPostId) {
+    try {
+      await api(`/posts/${exploreCurrentCommentPostId}/comments`, {
+        method: 'POST', body: { text, parent_id: null }
+      });
+      input.value = '';
+      await loadExploreComments(exploreCurrentCommentPostId);
+    } catch (err) {
+      console.error('Error posting comment:', err);
+      alert('Failed to post comment');
+    }
+  }
+});
+
+async function loadExploreComments(postId) {
+  try {
+    const comments = await api(`/posts/${postId}/comments`);
+    const list = document.getElementById('explore-comments-list');
+    list.innerHTML = '';
+    const topLevel = comments.filter(c => !c.parent_id);
+    topLevel.forEach(comment => {
+      list.appendChild(createExploreComment(comment, postId, comments));
+    });
+    if (comments.length === 0) {
+      list.innerHTML = '<div class="explore-loading">No comments yet. Be the first!</div>';
+    }
+  } catch (err) {
+    console.error('Error loading comments:', err);
+  }
+}
+
+function createExploreComment(comment, postId, allComments) {
+  const div = document.createElement('div');
+  div.className = 'explore-comment-item';
+  const username = comment.display_name || comment.username;
+
+  div.innerHTML = `
+    <div class="explore-comment-author" data-uid="${comment.user_id}">${username}</div>
+    <div class="explore-comment-text">${comment.text}</div>
+    <div class="explore-comment-actions">
+      <button class="explore-comment-act c-like ${comment.user_liked ? 'liked' : ''}" data-cid="${comment.id}">
+        <svg viewBox="0 0 24 24" fill="${comment.user_liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+        <span>${comment.likes}</span>
+      </button>
+      <button class="explore-comment-act c-dislike ${comment.user_disliked ? 'disliked' : ''}" data-cid="${comment.id}">
+        <svg viewBox="0 0 24 24" fill="${comment.user_disliked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+        <span>${comment.dislikes}</span>
+      </button>
+      <button class="explore-comment-act c-reply-btn">Reply</button>
+    </div>
+    <div class="explore-comment-reply-area" id="explore-reply-${comment.id}">
+      <textarea placeholder="Write a reply..."></textarea>
+      <button data-parent-id="${comment.id}">Post Reply</button>
+    </div>
+  `;
+
+  // Author click -> profile
+  div.querySelector('.explore-comment-author').addEventListener('click', (e) => {
+    const uid = parseInt(comment.user_id);
+    if (uid === S.me.id) {
+      showPC(e, 'me');
+    } else {
+      upsertUser({ id: uid, name: comment.display_name || comment.username, color: comment.color || '#58a6ff', avatar: comment.avatar || '' });
+      showPC(e, uid);
+    }
+  });
+
+  // Reply toggle
+  const replyArea = div.querySelector('.explore-comment-reply-area');
+  div.querySelector('.c-reply-btn').addEventListener('click', () => {
+    replyArea.classList.toggle('active');
+  });
+
+  // Submit reply
+  replyArea.querySelector('button').addEventListener('click', async () => {
+    const text = replyArea.querySelector('textarea').value.trim();
+    if (text) {
+      try {
+        await api(`/posts/${postId}/comments`, {
+          method: 'POST', body: { text, parent_id: comment.id }
+        });
+        replyArea.querySelector('textarea').value = '';
+        replyArea.classList.remove('active');
+        await loadExploreComments(postId);
+      } catch (err) { console.error('Reply error:', err); }
+    }
+  });
+
+  // Like comment
+  div.querySelector('.c-like').addEventListener('click', async () => {
+    try {
+      if (comment.user_liked) {
+        await api(`/comments/${comment.id}/interact`, { method: 'DELETE' });
+      } else {
+        await api(`/comments/${comment.id}/interact`, { method: 'POST', body: { type: 'like' } });
+      }
+      await loadExploreComments(postId);
+    } catch (err) { console.error('Comment like error:', err); }
+  });
+
+  // Dislike comment
+  div.querySelector('.c-dislike').addEventListener('click', async () => {
+    try {
+      if (comment.user_disliked) {
+        await api(`/comments/${comment.id}/interact`, { method: 'DELETE' });
+      } else {
+        await api(`/comments/${comment.id}/interact`, { method: 'POST', body: { type: 'dislike' } });
+      }
+      await loadExploreComments(postId);
+    } catch (err) { console.error('Comment dislike error:', err); }
+  });
+
+  // Nested replies
+  const replies = allComments.filter(c => c.parent_id === comment.id);
+  replies.forEach(reply => {
+    const replyEl = createExploreComment(reply, postId, allComments);
+    replyEl.classList.add('reply');
+    div.appendChild(replyEl);
+  });
+
+  return div;
+}
+
+/* ─── UPLOAD ─── */
+
+document.getElementById('explore-close-upload').addEventListener('click', closeExploreUpload);
+document.getElementById('explore-upload-cancel').addEventListener('click', closeExploreUpload);
+document.getElementById('explore-upload-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'explore-upload-modal') closeExploreUpload();
+});
+
+function closeExploreUpload() {
+  document.getElementById('explore-upload-modal').classList.remove('active');
+  document.getElementById('explore-upload-title').value = '';
+  document.getElementById('explore-upload-text').value = '';
+  document.getElementById('explore-upload-community').value = '';
+  document.getElementById('explore-img-preview').innerHTML = '';
+  document.getElementById('explore-file-name').textContent = '';
+  document.getElementById('explore-file-area').classList.remove('has-file');
+  exploreUploadedFile = null;
+}
+
+// Content type toggle
+document.getElementById('explore-content-type').addEventListener('change', (e) => {
+  document.getElementById('explore-text-field').style.display = e.target.value === 'text' ? 'flex' : 'none';
+  document.getElementById('explore-image-field').style.display = e.target.value === 'image' ? 'flex' : 'none';
+});
+
+// File area click
+document.getElementById('explore-file-area').addEventListener('click', () => {
+  document.getElementById('explore-file-input').click();
+});
+
+document.getElementById('explore-file-input').addEventListener('change', (e) => {
+  if (e.target.files[0]) handleExploreFile(e.target.files[0]);
+});
+
+// Drag and drop
+const exploreFileArea = document.getElementById('explore-file-area');
+exploreFileArea.addEventListener('dragover', (e) => { e.preventDefault(); exploreFileArea.style.borderColor = 'var(--accent)'; });
+exploreFileArea.addEventListener('dragleave', () => { exploreFileArea.style.borderColor = 'var(--border)'; });
+exploreFileArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  exploreFileArea.style.borderColor = 'var(--border)';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) handleExploreFile(file);
+});
+
+function handleExploreFile(file) {
+  exploreUploadedFile = file;
+  document.getElementById('explore-file-name').textContent = file.name;
+  document.getElementById('explore-file-area').classList.add('has-file');
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('explore-img-preview').innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Submit post
+document.getElementById('explore-upload-submit').addEventListener('click', async () => {
+  const title = document.getElementById('explore-upload-title').value.trim();
+  const contentType = document.getElementById('explore-content-type').value;
+  const community = document.getElementById('explore-upload-community').value.trim() || null;
+
+  if (!title) { alert('Please enter a title'); return; }
+
+  const submitBtn = document.getElementById('explore-upload-submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Posting...';
+
+  try {
+    if (contentType === 'text') {
+      const text = document.getElementById('explore-upload-text').value.trim();
+      if (!text) { alert('Please enter some text content'); submitBtn.disabled = false; submitBtn.textContent = 'Post'; return; }
+      await api('/posts', { method: 'POST', body: { title, content_type: 'text', content_data: text, community } });
+    } else {
+      if (!exploreUploadedFile) { alert('Please select an image'); submitBtn.disabled = false; submitBtn.textContent = 'Post'; return; }
+      const formData = new FormData();
+      formData.append('image', exploreUploadedFile);
+      formData.append('title', title);
+      formData.append('community', community || '');
+
+      const token = getToken();
+      const response = await fetch(`${API_URL}/posts/image`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+      if (!response.ok) throw new Error('Upload failed');
+    }
+
+    // Reload
+    closeExploreUpload();
+    explorePosts = [];
+    exploreLoadedCount = 0;
+    document.getElementById('explore-feed').innerHTML = '';
+    await loadExplorePosts();
+    document.getElementById('explore-body').scrollTop = 0;
+  } catch (err) {
+    console.error('Error creating post:', err);
+    alert('Failed to create post');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Post';
+  }
+});
+
 
