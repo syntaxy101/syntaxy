@@ -95,6 +95,56 @@ const upload = multer({
         `);
 
         console.log('Migration check complete');
+
+        // Explore feature tables
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS posts (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                title VARCHAR(200) NOT NULL,
+                content_type VARCHAR(20) NOT NULL DEFAULT 'text',
+                content_data TEXT,
+                community VARCHAR(100),
+                views INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS post_interactions (
+                id SERIAL PRIMARY KEY,
+                post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                type VARCHAR(10) NOT NULL CHECK (type IN ('like', 'dislike')),
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(post_id, user_id)
+            )
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS comments (
+                id SERIAL PRIMARY KEY,
+                post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+                text TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS comment_interactions (
+                id SERIAL PRIMARY KEY,
+                comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                type VARCHAR(10) NOT NULL CHECK (type IN ('like', 'dislike')),
+                created_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(comment_id, user_id)
+            )
+        `);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC)`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id)`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_post_interactions_post ON post_interactions(post_id)`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id)`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_comment_interactions_comment ON comment_interactions(comment_id)`);
+        console.log('Explore tables migration complete');
     } catch (err) {
         console.error('Migration error:', err);
     }
@@ -1818,6 +1868,220 @@ app.post('/api/upload', authenticateToken, upload.single('file'), async (req, re
     }
 });
 
+// ============================================
+// EXPLORE / POSTS API
+// ============================================
+
+// Get posts (explore feed)
+app.get('/api/posts', authenticateToken, async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = parseInt(req.query.offset) || 0;
+        const userId = req.user.id;
+
+        const result = await pool.query(`
+            SELECT p.*, 
+                   u.username, u.display_name, u.color, u.avatar,
+                   COALESCE((SELECT COUNT(*) FROM post_interactions WHERE post_id = p.id AND type = 'like'), 0)::int AS likes,
+                   COALESCE((SELECT COUNT(*) FROM post_interactions WHERE post_id = p.id AND type = 'dislike'), 0)::int AS dislikes,
+                   EXISTS(SELECT 1 FROM post_interactions WHERE post_id = p.id AND user_id = $3 AND type = 'like') AS user_liked,
+                   EXISTS(SELECT 1 FROM post_interactions WHERE post_id = p.id AND user_id = $3 AND type = 'dislike') AS user_disliked
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+            LIMIT $1 OFFSET $2
+        `, [limit, offset, userId]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching posts:', err);
+        res.status(500).json({ error: 'Failed to fetch posts' });
+    }
+});
+
+// Create a text post
+app.post('/api/posts', authenticateToken, async (req, res) => {
+    try {
+        const { title, content_type, content_data, community } = req.body;
+        if (!title) return res.status(400).json({ error: 'Title is required' });
+
+        const result = await pool.query(
+            `INSERT INTO posts (user_id, title, content_type, content_data, community) 
+             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+            [req.user.id, title, content_type || 'text', content_data || '', community || null]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error creating post:', err);
+        res.status(500).json({ error: 'Failed to create post' });
+    }
+});
+
+// Create an image post (multipart)
+app.post('/api/posts/image', authenticateToken, upload.single('image'), async (req, res) => {
+    try {
+        const { title, community } = req.body;
+        if (!title) return res.status(400).json({ error: 'Title is required' });
+        if (!req.file) return res.status(400).json({ error: 'Image is required' });
+
+        const s3Url = await uploadToS3(req.file, 'posts');
+
+        const result = await pool.query(
+            `INSERT INTO posts (user_id, title, content_type, content_data, community) 
+             VALUES ($1, $2, 'image', $3, $4) RETURNING *`,
+            [req.user.id, title, s3Url, community || null]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error creating image post:', err);
+        res.status(500).json({ error: 'Failed to create post' });
+    }
+});
+
+// Interact with a post (like/dislike)
+app.post('/api/posts/:id/interact', authenticateToken, async (req, res) => {
+    try {
+        const postId = parseInt(req.params.id);
+        const { type } = req.body;
+        if (!['like', 'dislike'].includes(type)) return res.status(400).json({ error: 'Invalid type' });
+
+        // Remove existing interaction first
+        await pool.query('DELETE FROM post_interactions WHERE post_id = $1 AND user_id = $2', [postId, req.user.id]);
+        // Insert new
+        await pool.query(
+            'INSERT INTO post_interactions (post_id, user_id, type) VALUES ($1, $2, $3)',
+            [postId, req.user.id, type]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error interacting with post:', err);
+        res.status(500).json({ error: 'Failed to interact' });
+    }
+});
+
+// Remove interaction from a post
+app.delete('/api/posts/:id/interact', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM post_interactions WHERE post_id = $1 AND user_id = $2', [parseInt(req.params.id), req.user.id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error removing interaction:', err);
+        res.status(500).json({ error: 'Failed to remove interaction' });
+    }
+});
+
+// Increment post views
+app.post('/api/posts/:id/view', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('UPDATE posts SET views = views + 1 WHERE id = $1', [parseInt(req.params.id)]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
+// Get comments for a post
+app.get('/api/posts/:id/comments', authenticateToken, async (req, res) => {
+    try {
+        const postId = parseInt(req.params.id);
+        const userId = req.user.id;
+
+        const result = await pool.query(`
+            SELECT c.*, 
+                   u.username, u.display_name, u.color, u.avatar,
+                   COALESCE((SELECT COUNT(*) FROM comment_interactions WHERE comment_id = c.id AND type = 'like'), 0)::int AS likes,
+                   COALESCE((SELECT COUNT(*) FROM comment_interactions WHERE comment_id = c.id AND type = 'dislike'), 0)::int AS dislikes,
+                   EXISTS(SELECT 1 FROM comment_interactions WHERE comment_id = c.id AND user_id = $2 AND type = 'like') AS user_liked,
+                   EXISTS(SELECT 1 FROM comment_interactions WHERE comment_id = c.id AND user_id = $2 AND type = 'dislike') AS user_disliked
+            FROM comments c
+            JOIN users u ON c.user_id = u.id
+            WHERE c.post_id = $1
+            ORDER BY c.created_at ASC
+        `, [postId, userId]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching comments:', err);
+        res.status(500).json({ error: 'Failed to fetch comments' });
+    }
+});
+
+// Post a comment
+app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
+    try {
+        const postId = parseInt(req.params.id);
+        const { text, parent_id } = req.body;
+        if (!text || !text.trim()) return res.status(400).json({ error: 'Comment text is required' });
+
+        const result = await pool.query(
+            `INSERT INTO comments (post_id, user_id, parent_id, text) VALUES ($1, $2, $3, $4) RETURNING *`,
+            [postId, req.user.id, parent_id || null, text.trim()]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error posting comment:', err);
+        res.status(500).json({ error: 'Failed to post comment' });
+    }
+});
+
+// Like/dislike a comment
+app.post('/api/comments/:id/interact', authenticateToken, async (req, res) => {
+    try {
+        const commentId = parseInt(req.params.id);
+        const { type } = req.body;
+        if (!['like', 'dislike'].includes(type)) return res.status(400).json({ error: 'Invalid type' });
+
+        await pool.query('DELETE FROM comment_interactions WHERE comment_id = $1 AND user_id = $2', [commentId, req.user.id]);
+        await pool.query(
+            'INSERT INTO comment_interactions (comment_id, user_id, type) VALUES ($1, $2, $3)',
+            [commentId, req.user.id, type]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error interacting with comment:', err);
+        res.status(500).json({ error: 'Failed to interact' });
+    }
+});
+
+// Remove interaction from a comment
+app.delete('/api/comments/:id/interact', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM comment_interactions WHERE comment_id = $1 AND user_id = $2', [parseInt(req.params.id), req.user.id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to remove interaction' });
+    }
+});
+
+// Get posts by a specific user
+app.get('/api/users/:id/posts', authenticateToken, async (req, res) => {
+    try {
+        const targetUserId = parseInt(req.params.id);
+        const userId = req.user.id;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = parseInt(req.query.offset) || 0;
+
+        const result = await pool.query(`
+            SELECT p.*, 
+                   u.username, u.display_name, u.color, u.avatar,
+                   COALESCE((SELECT COUNT(*) FROM post_interactions WHERE post_id = p.id AND type = 'like'), 0)::int AS likes,
+                   COALESCE((SELECT COUNT(*) FROM post_interactions WHERE post_id = p.id AND type = 'dislike'), 0)::int AS dislikes,
+                   EXISTS(SELECT 1 FROM post_interactions WHERE post_id = p.id AND user_id = $3 AND type = 'like') AS user_liked,
+                   EXISTS(SELECT 1 FROM post_interactions WHERE post_id = p.id AND user_id = $3 AND type = 'dislike') AS user_disliked
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.user_id = $1
+            ORDER BY p.created_at DESC
+            LIMIT $2 OFFSET $4
+        `, [targetUserId, limit, userId, offset]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching user posts:', err);
+        res.status(500).json({ error: 'Failed to fetch posts' });
+    }
+});
+
 // SPA catch-all
 app.use((req, res, next) => {
     if (!req.path.startsWith('/api')) {
@@ -1836,4 +2100,3 @@ server.listen(PORT, () => {
     console.log(`WebSocket server ready`);
     console.log(`AWS S3 configured for bucket: ${S3_BUCKET}`);
 });
-
