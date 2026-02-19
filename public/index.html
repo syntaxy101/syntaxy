@@ -613,10 +613,92 @@
   </div>
 </div>
 
+<!-- Explore Page -->
+<div id="explore-page">
+  <div id="explore-header">
+    <button class="explore-exit-btn" id="btn-exit-explore">← Back</button>
+    <h2 id="explore-page-title">Explore</h2>
+    <button class="explore-upload-btn" id="btn-explore-upload">+ Create Post</button>
+  </div>
+  <div id="explore-body">
+    <div id="explore-content">
+      <div class="explore-search-container">
+        <input type="text" class="explore-search-bar" id="explore-search" placeholder="Search posts...">
+      </div>
+      <div class="explore-tabs">
+        <button class="explore-tab active" id="explore-tab-explore">Explore</button>
+        <button class="explore-tab" id="explore-tab-following">Following</button>
+      </div>
+      <div class="explore-feed" id="explore-feed"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Explore Comment Modal -->
+<div class="explore-modal-overlay" id="explore-comment-modal">
+  <div class="explore-modal-content">
+    <div class="explore-modal-header">
+      <h3>Comments</h3>
+      <button class="explore-modal-close" id="explore-close-comments">×</button>
+    </div>
+    <div id="explore-modal-post-preview"></div>
+    <div class="explore-comment-input-area">
+      <textarea class="explore-comment-input" id="explore-comment-input" placeholder="Write a comment..."></textarea>
+      <button class="explore-comment-submit" id="explore-submit-comment">Post Comment</button>
+    </div>
+    <div class="explore-comments-list" id="explore-comments-list"></div>
+  </div>
+</div>
+
+<!-- Explore Upload Modal -->
+<div class="explore-modal-overlay" id="explore-upload-modal">
+  <div class="explore-modal-content">
+    <div class="explore-modal-header">
+      <h3>Create Post</h3>
+      <button class="explore-modal-close" id="explore-close-upload">×</button>
+    </div>
+    <div class="explore-upload-form" id="explore-upload-form">
+      <div class="explore-field">
+        <label>Title</label>
+        <input type="text" id="explore-upload-title" placeholder="Give your post a title...">
+      </div>
+      <div class="explore-field">
+        <label>Content Type</label>
+        <select id="explore-content-type">
+          <option value="text">Text/Paragraph</option>
+          <option value="image">Image</option>
+        </select>
+      </div>
+      <div class="explore-field" id="explore-text-field">
+        <label>Text Content</label>
+        <textarea id="explore-upload-text" placeholder="Write your post content..."></textarea>
+      </div>
+      <div class="explore-field" id="explore-image-field" style="display:none">
+        <label>Upload Image</label>
+        <div class="explore-file-area" id="explore-file-area">
+          <div class="explore-file-label">Click to select an image or drag and drop</div>
+          <div class="explore-file-name" id="explore-file-name"></div>
+          <input type="file" id="explore-file-input" accept="image/*" style="display:none">
+        </div>
+        <div class="explore-img-preview" id="explore-img-preview"></div>
+      </div>
+      <div class="explore-field">
+        <label>Community (Optional)</label>
+        <input type="text" id="explore-upload-community" placeholder="e.g. r/webdev">
+      </div>
+      <div class="explore-upload-actions">
+        <button class="btn sec" id="explore-upload-cancel">Cancel</button>
+        <button class="btn grad" id="explore-upload-submit">Post</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════
      SCRIPT
      ═══════════════════════════════════════════════════════════ -->
 <script src="/app.js"></script>
 </body>
 </html>
+
 
