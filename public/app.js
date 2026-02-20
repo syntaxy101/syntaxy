@@ -125,7 +125,7 @@ async function loadDMsFromDatabase() {
         S.dmLastActivity[dm.id] = dm.last_message_at || dm.updated_at || dm.created_at;
       }
 
-    // Add/update user so U() has fresh data
+      // Add/update user so U() has fresh data
       const otherAvatar = dm.user1_id === S.me.id ? dm.user2_avatar : dm.user1_avatar;
       const otherColor = dm.user1_id === S.me.id ? dm.user2_color : dm.user1_color;
       upsertUser({
@@ -157,8 +157,8 @@ const S={
     sidebarGrad1:'#161b22',
     sidebarGrad2:'#1c2333'
   },
- users:[], // No more placeholder bots - all real users from database
- servers:[],
+  users:[], // No more placeholder bots - all real users from database
+  servers:[],
   srvId:null, chId:null,
   view:'dms', // 'server' | 'dms'
   replyTo:null, pendingImg:null, pendingChBg:null, ctxId:null, ctxChId:null,
@@ -541,18 +541,18 @@ async function initApp() {
       id: 'home', name: 'Home', icon: '🏠', isAdmin: true,
       banner: '', defChBg: '', iconImg: '',
       aesthetics: {
-  bg: '#0d1117',
-  surface: '#161b22',
-  acc1: '#58a6ff',
-  acc2: '#3fb950',
-  text: '#c9d1d9',
-  border: '#30363d',
-  sidebarStyle: 'solid',
-  sidebarGrad1: '#161b22',
-  sidebarGrad2: '#1c2333',
-  sidebarOpacity:1,
-  sidebarBlur:10
-},
+        bg: '#0d1117',
+        surface: '#161b22',
+        acc1: '#58a6ff',
+        acc2: '#3fb950',
+        text: '#c9d1d9',
+        border: '#30363d',
+        sidebarStyle: 'solid',
+        sidebarGrad1: '#161b22',
+        sidebarGrad2: '#1c2333',
+        sidebarOpacity:1,
+        sidebarBlur:10
+      },
       channels: [],
       dms: []
     });
@@ -844,8 +844,8 @@ function renderRail(){
       e.preventDefault();
       i.style.borderTop = '';
       const draggedId = isNaN(e.dataTransfer.getData('text/plain'))
-        ? e.dataTransfer.getData('text/plain')
-        : Number(e.dataTransfer.getData('text/plain'));
+      ? e.dataTransfer.getData('text/plain')
+      : Number(e.dataTransfer.getData('text/plain'));
       const targetId = s.id;
       if (draggedId === targetId) return;
       const fromIdx = S.servers.findIndex(sv => sv.id === draggedId);
@@ -900,74 +900,74 @@ function renderSidebar(){
   }
 
   if(S.view==='dms'){
-  document.getElementById('sidebar-title').textContent='Direct Messages';
-  
-  // Add explore planet button next to the title
-  const titleEl = document.getElementById('sidebar-title');
-  titleEl.innerHTML = 'Direct Messages <button class="explore-planet-btn" id="btn-explore" title="Explore">🪐</button>';
-  document.getElementById('btn-explore').onclick = () => openExplorePage();
-  
-  document.getElementById('btn-srv-set').style.display='none';
-  document.getElementById('btn-friends').style.display='';
-  updateFriendBadge();
+    document.getElementById('sidebar-title').textContent='Direct Messages';
 
-  const homeServer = S.servers.find(srv => srv.id === 'home');
-  const dmList = homeServer ? homeServer.dms : [];
+    // Add explore planet button next to the title
+    const titleEl = document.getElementById('sidebar-title');
+    titleEl.innerHTML = 'Direct Messages <button class="explore-planet-btn" id="btn-explore" title="Explore">🪐</button>';
+    document.getElementById('btn-explore').onclick = () => openExplorePage();
 
-  // Sort DMs by last activity (most recent first)
-  dmList.sort((a, b) => {
-    const tA = S.dmLastActivity[a.id] || '';
-    const tB = S.dmLastActivity[b.id] || '';
-    if (tA && tB) return new Date(tB) - new Date(tA);
-    if (tA) return -1;
-    if (tB) return 1;
-    return 0;
-  });
-  // ADD SEARCH USERS BUTTON
-  const searchBtn = document.createElement('button');
-  searchBtn.id = 'open-user-search-btn';
-  searchBtn.textContent = '🔍 Search Users';
-  searchBtn.style.cssText = 'width:calc(100% - 16px);padding:10px;margin:8px;background:linear-gradient(135deg,#58a6ff,#3fb950);color:white;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:filter 0.2s;font-family:Inter,sans-serif';
-  searchBtn.onclick = () => {
-    document.getElementById('user-search-overlay').classList.add('show');
-    document.getElementById('user-search-input').focus();
-  };
-  body.appendChild(searchBtn);
+    document.getElementById('btn-srv-set').style.display='none';
+    document.getElementById('btn-friends').style.display='';
+    updateFriendBadge();
 
-  // Show "No DMs yet" message if empty
-  if (dmList.length === 0) {
-    const emptyMsg = document.createElement('div');
-    emptyMsg.style.cssText = 'text-align:center;padding:40px 20px;color:var(--dim);font-size:13px;line-height:1.6';
-    emptyMsg.innerHTML = `
+    const homeServer = S.servers.find(srv => srv.id === 'home');
+    const dmList = homeServer ? homeServer.dms : [];
+
+    // Sort DMs by last activity (most recent first)
+    dmList.sort((a, b) => {
+      const tA = S.dmLastActivity[a.id] || '';
+      const tB = S.dmLastActivity[b.id] || '';
+      if (tA && tB) return new Date(tB) - new Date(tA);
+      if (tA) return -1;
+      if (tB) return 1;
+      return 0;
+    });
+    // ADD SEARCH USERS BUTTON
+    const searchBtn = document.createElement('button');
+    searchBtn.id = 'open-user-search-btn';
+    searchBtn.textContent = '🔍 Search Users';
+    searchBtn.style.cssText = 'width:calc(100% - 16px);padding:10px;margin:8px;background:linear-gradient(135deg,#58a6ff,#3fb950);color:white;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;transition:filter 0.2s;font-family:Inter,sans-serif';
+    searchBtn.onclick = () => {
+      document.getElementById('user-search-overlay').classList.add('show');
+      document.getElementById('user-search-input').focus();
+    };
+    body.appendChild(searchBtn);
+
+    // Show "No DMs yet" message if empty
+    if (dmList.length === 0) {
+      const emptyMsg = document.createElement('div');
+      emptyMsg.style.cssText = 'text-align:center;padding:40px 20px;color:var(--dim);font-size:13px;line-height:1.6';
+      emptyMsg.innerHTML = `
       <div style="font-size:48px;margin-bottom:12px;opacity:0.3">💬</div>
       <div style="font-weight:600;margin-bottom:8px">No Direct Messages Yet</div>
       <div style="font-size:12px;opacity:0.8">Search for users above to start a conversation</div>
-    `;
-    body.appendChild(emptyMsg);
-    return; // Don't try to render DM list
-  }
+      `;
+      body.appendChild(emptyMsg);
+      return; // Don't try to render DM list
+    }
 
-  dmList.forEach(d=>{
-    const u=U(d.userId);
+    dmList.forEach(d=>{
+      const u=U(d.userId);
 
-    const el=document.createElement('div');
-    const isUnread = S.unreadDMs[d.id];
-    el.className='ch-item'+(d.id===S.chId?' active':'')+(isUnread?' dm-unread':'');
-    el.innerHTML=`<div class="dm-av-sm">${avHTML(u,24)}</div><span class="ch-name">${u.name}</span>`;
-    el.onclick=()=>{
-      S.chId=d.id;
-      delete S.unreadDMs[d.id];
-      renderAll();
-      autoSave();
-    };
-    body.appendChild(el);
-  });
+      const el=document.createElement('div');
+      const isUnread = S.unreadDMs[d.id];
+      el.className='ch-item'+(d.id===S.chId?' active':'')+(isUnread?' dm-unread':'');
+      el.innerHTML=`<div class="dm-av-sm">${avHTML(u,24)}</div><span class="ch-name">${u.name}</span>`;
+      el.onclick=()=>{
+        S.chId=d.id;
+        delete S.unreadDMs[d.id];
+        renderAll();
+        autoSave();
+      };
+      body.appendChild(el);
+    });
   } else {
     document.getElementById('sidebar-title').textContent=s.name;
     // channels
     // Show server settings button when not in DMs
-  document.getElementById('btn-srv-set').style.display='flex';
-  document.getElementById('btn-friends').style.display='none';
+    document.getElementById('btn-srv-set').style.display='flex';
+    document.getElementById('btn-friends').style.display='none';
     const cl=document.createElement('div'); cl.className='sec-label';
     cl.innerHTML='CHANNELS <button id="btn-addch">+</button>'; body.appendChild(cl);
     document.getElementById('btn-addch').onclick=()=>openM('m-newch');
@@ -1022,11 +1022,11 @@ async function renderMsgs(){
     _loadedChannels.add(c.id);
     try {
       const endpoint = c.type === 'dm'
-        ? `/dms/${c.id}/messages`
-        : `/channels/${c.id}/messages`;
+      ? `/dms/${c.id}/messages`
+      : `/channels/${c.id}/messages`;
 
       const messages = await api(endpoint);
-    // Add/update message authors with latest data
+      // Add/update message authors with latest data
       messages.forEach(m => {
         upsertUser({
           id: m.user_id,
@@ -1043,10 +1043,10 @@ async function renderMsgs(){
         img: m.image || null,
         reply: m.reply_to,
         time: new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
-        edited: m.edited,
-        reactions: m.reactions || {},
-        username: m.username,
-        userColor: m.color || '#58a6ff'
+                                  edited: m.edited,
+                                  reactions: m.reactions || {},
+                                  username: m.username,
+                                  userColor: m.color || '#58a6ff'
       }));
     } catch (err) {
       console.error('Failed to load messages:', err);
@@ -1072,7 +1072,7 @@ async function renderMsgs(){
   // Same channel - only add new messages
   const existingIds = new Set(
     Array.from(wrap.querySelectorAll('.msg-row[data-id]'))
-      .map(el => el.dataset.id).filter(Boolean)
+    .map(el => el.dataset.id).filter(Boolean)
   );
 
   const newMessages = c.msgs.filter(m => !existingIds.has(String(m.id)));
@@ -1132,8 +1132,8 @@ function createMsgRow(m, prevMsg) {
       const users = m.reactions[emoji];
       const isMine = users.includes('me');
       reactHTML += `<div class="msg-react${isMine ? ' mine' : ''}" data-emoji="${emoji}" data-msgid="${m.id}">
-        <span>${emoji}</span>
-        <span class="msg-react-count">${users.length}</span>
+      <span>${emoji}</span>
+      <span class="msg-react-count">${users.length}</span>
       </div>`;
     }
     reactHTML += '</div>';
@@ -1144,18 +1144,18 @@ function createMsgRow(m, prevMsg) {
   row.dataset.id = m.id;
   row.dataset.uid = m.uid;
   row.innerHTML = `
-    <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
-    <div class="msg-body">
-      ${rpHTML}
-      <div class="msg-hd">
-        <span class="msg-name" style="color:${u.color}" data-uid="${m.uid}">${u.name}</span>
-        <span class="msg-time">${m.time}</span>
-        ${m.edited ? '<span class="msg-edited">(edited)</span>' : ''}
-      </div>
-      <div class="msg-text">${linkify(m.text)}</div>
-      ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
-      ${reactHTML}
-    </div>`;
+  <div class="msg-av" data-uid="${m.uid}">${avHTML(u,34)}</div>
+  <div class="msg-body">
+  ${rpHTML}
+  <div class="msg-hd">
+  <span class="msg-name" style="color:${u.color}" data-uid="${m.uid}">${u.name}</span>
+  <span class="msg-time">${m.time}</span>
+  ${m.edited ? '<span class="msg-edited">(edited)</span>' : ''}
+  </div>
+  <div class="msg-text">${linkify(m.text)}</div>
+  ${m.img ? `<img class="msg-img" src="${m.img}" alt="">` : ''}
+  ${reactHTML}
+  </div>`;
 
   // RIGHT-CLICK → context menu
   row.addEventListener('contextmenu', e => {
@@ -1217,7 +1217,7 @@ document.getElementById('search-window-input').addEventListener('input', e => {
   }
 
   const matches = c.msgs.filter(m =>
-    !m.sys && m.text && m.text.toLowerCase().includes(query)
+  !m.sys && m.text && m.text.toLowerCase().includes(query)
   );
 
   if(matches.length === 0) {
@@ -1234,12 +1234,12 @@ document.getElementById('search-window-input').addEventListener('input', e => {
     // Highlight the query in the text
     const text = m.text.replace(
       new RegExp(`(${query})`, 'gi'),
-      '<mark>$1</mark>'
+                                '<mark>$1</mark>'
     );
 
     item.innerHTML = `
-      <div class="search-result-user" style="color:${u.color}">${u.name} <span style="color:var(--dim);font-weight:400;font-size:11px">${m.time}</span></div>
-      <div class="search-result-text">${text}</div>
+    <div class="search-result-user" style="color:${u.color}">${u.name} <span style="color:var(--dim);font-weight:400;font-size:11px">${m.time}</span></div>
+    <div class="search-result-text">${text}</div>
     `;
 
     item.onclick = () => {
@@ -1420,7 +1420,7 @@ async function showPC(e,uid){
       openGallery('me');
     };
     act.appendChild(galB);
- } else {
+  } else {
     // DM btn
     const dmB=document.createElement('button');
     dmB.className='pc-btn sec';
@@ -1631,13 +1631,13 @@ async function send() {
     // Local-only (demo channels)
     c.msgs.push({
       id: Date.now(),
-      uid: 'me',
-      text,
-      img: tempImg,
-      reply: tempReply,
-      time: T(),
-      edited: false,
-      reactions: {}
+                uid: 'me',
+                text,
+                img: tempImg,
+                reply: tempReply,
+                time: T(),
+                edited: false,
+                reactions: {}
     });
     renderMsgs();
   }
@@ -1875,7 +1875,7 @@ function openUISettings(){
   document.getElementById('ui-opacity-val').textContent = Math.round(opacity * 100) + '%';
   document.getElementById('ui-blur-val').textContent = blur + 'px';
   const bgMode = t.sidebarBgMode || 'color';
-document.getElementById('ui-sidebar-bg-mode').value = bgMode;
+  document.getElementById('ui-sidebar-bg-mode').value = bgMode;
 
   document.getElementById('ui-grad-swatch').style.background=`linear-gradient(135deg,${t.acc1},${t.acc2})`;
   document.getElementById('ui-sidebar-grad-swatch').style.background=`linear-gradient(135deg,${t.sidebarGrad1},${t.sidebarGrad2})`;
@@ -2052,20 +2052,20 @@ document.getElementById('btn-srv-set').onclick=()=>{
   document.getElementById('s-text').value  =a.text;
   document.getElementById('s-border').value=a.border;
   document.getElementById('s-sidebar-style').value=a.sidebarStyle;
-document.getElementById('s-sb-grad1').value=a.sidebarGrad1;
-document.getElementById('s-sb-grad2').value=a.sidebarGrad2;
+  document.getElementById('s-sb-grad1').value=a.sidebarGrad1;
+  document.getElementById('s-sb-grad2').value=a.sidebarGrad2;
 
-const sOpacity = a.sidebarOpacity !== undefined ? a.sidebarOpacity : 1;
-const sBlur = a.sidebarBlur !== undefined ? a.sidebarBlur : 10;
-const sBgMode = a.sidebarBgMode || 'color';
+  const sOpacity = a.sidebarOpacity !== undefined ? a.sidebarOpacity : 1;
+  const sBlur = a.sidebarBlur !== undefined ? a.sidebarBlur : 10;
+  const sBgMode = a.sidebarBgMode || 'color';
 
-document.getElementById('s-sidebar-opacity').value = sOpacity * 100;
-document.getElementById('s-sidebar-blur').value = sBlur;
-document.getElementById('s-sidebar-bg-mode').value = sBgMode;
-document.getElementById('s-opacity-val').textContent = Math.round(sOpacity * 100) + '%';
-document.getElementById('s-blur-val').textContent = sBlur + 'px';
+  document.getElementById('s-sidebar-opacity').value = sOpacity * 100;
+  document.getElementById('s-sidebar-blur').value = sBlur;
+  document.getElementById('s-sidebar-bg-mode').value = sBgMode;
+  document.getElementById('s-opacity-val').textContent = Math.round(sOpacity * 100) + '%';
+  document.getElementById('s-blur-val').textContent = sBlur + 'px';
 
-document.getElementById('s-grad-swatch').style.background=`linear-gradient(135deg,${a.acc1},${a.acc2})`;
+  document.getElementById('s-grad-swatch').style.background=`linear-gradient(135deg,${a.acc1},${a.acc2})`;
   document.getElementById('s-sidebar-grad-swatch').style.background=`linear-gradient(135deg,${a.sidebarGrad1},${a.sidebarGrad2})`;
 
   setPreview('ub-srv-icon',s.iconImg||'');
@@ -2248,21 +2248,21 @@ function updateServerPreview() {
   document.getElementById('preview-srv-title').style.color = text;
 
   // Sidebar
- // Sidebar
-const sidebar = document.getElementById('preview-srv-sidebar');
-const sOpacity = document.getElementById('s-sidebar-opacity').value / 100;
-const sBlur = document.getElementById('s-sidebar-blur').value;
+  // Sidebar
+  const sidebar = document.getElementById('preview-srv-sidebar');
+  const sOpacity = document.getElementById('s-sidebar-opacity').value / 100;
+  const sBlur = document.getElementById('s-sidebar-blur').value;
 
-if(sidebarStyle === 'gradient') {
-  const grad1 = hexToRgba(sbGrad1, sOpacity);
-  const grad2 = hexToRgba(sbGrad2, sOpacity);
-  sidebar.style.background = `linear-gradient(180deg, ${grad1}, ${grad2})`;
-} else {
-  sidebar.style.backgroundColor = hexToRgba(surf, sOpacity);
-}
-sidebar.style.backdropFilter = `blur(${sBlur}px)`;
-sidebar.style.webkitBackdropFilter = `blur(${sBlur}px)`;
-sidebar.style.color = text;
+  if(sidebarStyle === 'gradient') {
+    const grad1 = hexToRgba(sbGrad1, sOpacity);
+    const grad2 = hexToRgba(sbGrad2, sOpacity);
+    sidebar.style.background = `linear-gradient(180deg, ${grad1}, ${grad2})`;
+  } else {
+    sidebar.style.backgroundColor = hexToRgba(surf, sOpacity);
+  }
+  sidebar.style.backdropFilter = `blur(${sBlur}px)`;
+  sidebar.style.webkitBackdropFilter = `blur(${sBlur}px)`;
+  sidebar.style.color = text;
 
   // Main area
   const main = document.getElementById('preview-srv-main');
@@ -2321,18 +2321,18 @@ document.getElementById('btn-do-newsrv').onclick = async () => {
       defChBg: '',
       iconImg: '',
       aesthetics: {
-  bg: '#0d1117',
-  surface: '#161b22',
-  acc1: document.getElementById('ns-accent').value,
-  acc2: '#3fb950',
-  text: '#c9d1d9',
-  border: '#30363d',
-  sidebarStyle: 'solid',
-  sidebarGrad1: '#161b22',
-  sidebarGrad2: '#1c2333',
-  sidebarOpacity:1,
-  sidebarBlur:10
-},
+        bg: '#0d1117',
+        surface: '#161b22',
+        acc1: document.getElementById('ns-accent').value,
+        acc2: '#3fb950',
+        text: '#c9d1d9',
+        border: '#30363d',
+        sidebarStyle: 'solid',
+        sidebarGrad1: '#161b22',
+        sidebarGrad2: '#1c2333',
+        sidebarOpacity:1,
+        sidebarBlur:10
+      },
       channels: channels.map(ch => ({
         id: ch.id,
         name: ch.name,
@@ -2583,8 +2583,8 @@ document.getElementById('btn-members').onclick=async()=>{
 function memRow(uid,isMe){
   const u=U(uid);
   const avContent = u.avatar
-    ? `<img src="${u.avatar}" style="width:34px;height:34px;object-fit:cover;">`
-    : `<div class="default-av" style="background:${u.color};color:#fff;width:34px;height:34px">✦</div>`;
+  ? `<img src="${u.avatar}" style="width:34px;height:34px;object-fit:cover;">`
+  : `<div class="default-av" style="background:${u.color};color:#fff;width:34px;height:34px">✦</div>`;
   const avW=`<div class="mem-av"${isMe?'':`data-uid="${uid}"`}>${avContent}</div>`;
   const nameW=`<span class="mem-name"${isMe?'':`data-uid="${uid}"`} style="color:${u.color}">${u.name}</span>`;
   const tag=isMe?'<span class="tag" style="margin-left:auto">You</span>':(u.friends?'<span class="tag" style="margin-left:auto;background:rgba(63,185,80,.12);color:var(--accent2)">Friend</span>':'');
@@ -2716,11 +2716,11 @@ async function handleAuth() {
 
       // Load gallery and personalUI from server
       const serverGallery = data.user.gallery && Object.keys(data.user.gallery).length > 0
-        ? { ...defaultGallery, ...data.user.gallery }
-        : defaultGallery;
+      ? { ...defaultGallery, ...data.user.gallery }
+      : defaultGallery;
       const serverUI = data.user.personal_ui && Object.keys(data.user.personal_ui).length > 0
-        ? { ...defaultUI, ...data.user.personal_ui }
-        : defaultUI;
+      ? { ...defaultUI, ...data.user.personal_ui }
+      : defaultUI;
 
       S.me = {
         id: data.user.id,
@@ -2797,10 +2797,10 @@ function loginUser(username, userData) {
   if (c && c.msgs.length === 0) {
     c.msgs.unshift({
       id: Date.now() - 9999,
-      uid: '__sys__',
-      text: `Welcome ${username}! 🎉 Click + to create a server. Right-click channels to edit/delete. Right-click messages for options. Click avatars for profiles. Press Ctrl+F to search messages.`,
-      sys: true,
-      time: T()
+                   uid: '__sys__',
+                   text: `Welcome ${username}! 🎉 Click + to create a server. Right-click channels to edit/delete. Right-click messages for options. Click avatars for profiles. Press Ctrl+F to search messages.`,
+                   sys: true,
+                   time: T()
     });
     renderMsgs();
   }
@@ -2949,13 +2949,13 @@ function renderGallery(){
 
     if(item.type === 'video') {
       div.innerHTML = `
-        <video src="${item.src}" controls></video>
-        ${S.currentGalleryUserId === 'me' ? `<button class="gallery-item-del" data-idx="${idx}">✕</button>` : ''}
+      <video src="${item.src}" controls></video>
+      ${S.currentGalleryUserId === 'me' ? `<button class="gallery-item-del" data-idx="${idx}">✕</button>` : ''}
       `;
     } else {
       div.innerHTML = `
-        <img src="${item.src}" alt="">
-        ${S.currentGalleryUserId === 'me' ? `<button class="gallery-item-del" data-idx="${idx}">✕</button>` : ''}
+      <img src="${item.src}" alt="">
+      ${S.currentGalleryUserId === 'me' ? `<button class="gallery-item-del" data-idx="${idx}">✕</button>` : ''}
       `;
     }
 
@@ -3106,351 +3106,351 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 
 // Initialize WebSocket connection
 function initWebSocket() {
-    const token = getToken();
-    if (!token) {
-        console.log('No token found, cannot connect to WebSocket');
-        return;
-    }
+  const token = getToken();
+  if (!token) {
+    console.log('No token found, cannot connect to WebSocket');
+    return;
+  }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${protocol}//${window.location.host}`;
 
-    console.log('Connecting to WebSocket:', wsUrl);
+  console.log('Connecting to WebSocket:', wsUrl);
 
-    ws = new WebSocket(wsUrl);
+  ws = new WebSocket(wsUrl);
 
-    ws.addEventListener('open', () => {
-        console.log('WebSocket connected!');
-        wsReconnectAttempts = 0;
+  ws.addEventListener('open', () => {
+    console.log('WebSocket connected!');
+    wsReconnectAttempts = 0;
 
-        ws.send(JSON.stringify({
-            type: 'authenticate',
-            token: token
-        }));
-    });
+    ws.send(JSON.stringify({
+      type: 'authenticate',
+      token: token
+    }));
+  });
 
-    ws.addEventListener('message', (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            console.log('WebSocket message received:', data.type);
+  ws.addEventListener('message', (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      console.log('WebSocket message received:', data.type);
 
-            switch (data.type) {
-                case 'authenticated':
-                    console.log('WebSocket authenticated as user:', data.username);
-                    break;
+      switch (data.type) {
+        case 'authenticated':
+          console.log('WebSocket authenticated as user:', data.username);
+          break;
 
-                case 'channel_message':
-                    handleNewChannelMessage(data.channelId, data.message);
-                    break;
+        case 'channel_message':
+          handleNewChannelMessage(data.channelId, data.message);
+          break;
 
-                case 'dm_message':
-                    handleNewDMMessage(data.dmChannelId, data.message);
-                    break;
+        case 'dm_message':
+          handleNewDMMessage(data.dmChannelId, data.message);
+          break;
 
-                case 'message_edited':
-                    handleMessageEdited(data.channelId, data.messageId, data.text, false);
-                    break;
+        case 'message_edited':
+          handleMessageEdited(data.channelId, data.messageId, data.text, false);
+          break;
 
-                case 'dm_message_edited':
-                    handleMessageEdited(data.dmChannelId, data.messageId, data.text, true);
-                    break;
+        case 'dm_message_edited':
+          handleMessageEdited(data.dmChannelId, data.messageId, data.text, true);
+          break;
 
-                case 'message_deleted':
-                    handleMessageDeleted(data.channelId, data.messageId, false);
-                    break;
+        case 'message_deleted':
+          handleMessageDeleted(data.channelId, data.messageId, false);
+          break;
 
-                case 'dm_message_deleted':
-                    handleMessageDeleted(data.dmChannelId, data.messageId, true);
-                    break;
+        case 'dm_message_deleted':
+          handleMessageDeleted(data.dmChannelId, data.messageId, true);
+          break;
 
-                case 'user_typing':
-                    handleTypingIndicator(data);
-                    break;
+        case 'user_typing':
+          handleTypingIndicator(data);
+          break;
 
-                    case 'profile_updated':
-                    upsertUser({
-                      id: data.user.id,
-                      name: data.user.display_name || data.user.username,
-                      color: data.user.color,
-                      accent: data.user.accent,
-                      avatar: data.user.avatar,
-                      banner: data.user.banner,
-                      bio: data.user.bio
-                    });
-                    // Re-render to show updated profile everywhere
-                    lastRenderedChId = null;
-                    renderMsgs();
-                    renderSidebar();
-                    break;
+        case 'profile_updated':
+          upsertUser({
+            id: data.user.id,
+            name: data.user.display_name || data.user.username,
+            color: data.user.color,
+            accent: data.user.accent,
+            avatar: data.user.avatar,
+            banner: data.user.banner,
+            bio: data.user.bio
+          });
+          // Re-render to show updated profile everywhere
+          lastRenderedChId = null;
+          renderMsgs();
+          renderSidebar();
+          break;
 
-                case 'error':
-                    console.error('WebSocket error:', data.message);
-                    break;
+        case 'error':
+          console.error('WebSocket error:', data.message);
+          break;
 
-                case 'friend_request_received':
-                case 'friend_request_sent':
-                case 'friend_request_accepted':
-                case 'friend_request_declined':
-                    updateFriendBadge();
-                    break;
+        case 'friend_request_received':
+        case 'friend_request_sent':
+        case 'friend_request_accepted':
+        case 'friend_request_declined':
+          updateFriendBadge();
+          break;
 
-                case 'dm_bg_changed': {
-                    const homeServer = S.servers.find(s => s.id === 'home');
-                    if (homeServer) {
-                        const dm = homeServer.dms.find(d => d.id === data.dmChannelId);
-                        if (dm) {
-                            dm.bg = data.background || '';
-                            const c = ch();
-                            if (c && c.id === data.dmChannelId) renderBg();
-                        }
-                    }
-                    break;
-                }
-
-                case 'channel_bg_changed': {
-                    for (const s of S.servers) {
-                        if (!s.channels) continue;
-                        const chan = s.channels.find(c => c.id === data.channelId);
-                        if (chan) {
-                            chan.bg = data.background || '';
-                            const c = ch();
-                            if (c && c.id === data.channelId) renderBg();
-                            break;
-                        }
-                    }
-                    break;
-                }
-
-                case 'server_aesthetics_updated': {
-                    const s = S.servers.find(sv => sv.id === data.serverId);
-                    if (s) {
-                        if (data.aesthetics) s.aesthetics = data.aesthetics;
-                        if (data.name) s.name = data.name;
-                        if (data.iconImg !== undefined) s.iconImg = data.iconImg;
-                        if (data.banner !== undefined) s.banner = data.banner;
-                        if (data.defChBg !== undefined) s.defChBg = data.defChBg;
-                        // Re-render if viewing this server (respects personal override)
-                        if (S.srvId === data.serverId) {
-                            renderAll();
-                        } else {
-                            renderRail();
-                        }
-                    }
-                    break;
-                }
+        case 'dm_bg_changed': {
+          const homeServer = S.servers.find(s => s.id === 'home');
+          if (homeServer) {
+            const dm = homeServer.dms.find(d => d.id === data.dmChannelId);
+            if (dm) {
+              dm.bg = data.background || '';
+              const c = ch();
+              if (c && c.id === data.dmChannelId) renderBg();
             }
-        } catch (err) {
-            console.error('Error parsing WebSocket message:', err);
+          }
+          break;
         }
-    });
 
-    ws.addEventListener('close', () => {
-        console.log('WebSocket disconnected');
-        ws = null;
-
-        if (wsReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            wsReconnectAttempts++;
-            const delay = Math.min(1000 * Math.pow(2, wsReconnectAttempts), 30000);
-            console.log(`Reconnecting in ${delay}ms... (attempt ${wsReconnectAttempts})`);
-            setTimeout(initWebSocket, delay);
+        case 'channel_bg_changed': {
+          for (const s of S.servers) {
+            if (!s.channels) continue;
+            const chan = s.channels.find(c => c.id === data.channelId);
+            if (chan) {
+              chan.bg = data.background || '';
+              const c = ch();
+              if (c && c.id === data.channelId) renderBg();
+              break;
+            }
+          }
+          break;
         }
-    });
 
-    ws.addEventListener('error', (error) => {
-        console.error('WebSocket error:', error);
-    });
+        case 'server_aesthetics_updated': {
+          const s = S.servers.find(sv => sv.id === data.serverId);
+          if (s) {
+            if (data.aesthetics) s.aesthetics = data.aesthetics;
+            if (data.name) s.name = data.name;
+            if (data.iconImg !== undefined) s.iconImg = data.iconImg;
+            if (data.banner !== undefined) s.banner = data.banner;
+            if (data.defChBg !== undefined) s.defChBg = data.defChBg;
+            // Re-render if viewing this server (respects personal override)
+            if (S.srvId === data.serverId) {
+              renderAll();
+            } else {
+              renderRail();
+            }
+          }
+          break;
+        }
+      }
+    } catch (err) {
+      console.error('Error parsing WebSocket message:', err);
+    }
+  });
+
+  ws.addEventListener('close', () => {
+    console.log('WebSocket disconnected');
+    ws = null;
+
+    if (wsReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      wsReconnectAttempts++;
+      const delay = Math.min(1000 * Math.pow(2, wsReconnectAttempts), 30000);
+      console.log(`Reconnecting in ${delay}ms... (attempt ${wsReconnectAttempts})`);
+      setTimeout(initWebSocket, delay);
+    }
+  });
+
+  ws.addEventListener('error', (error) => {
+    console.error('WebSocket error:', error);
+  });
 }
 
 function sendMessageViaWebSocket(channelId, text, image = null, reply_to = null, isDM = false, dmChannelId = null) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        console.error('WebSocket not connected');
-        return sendMessageViaHTTP(channelId, text, image, reply_to, isDM, dmChannelId);
-    }
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    console.error('WebSocket not connected');
+    return sendMessageViaHTTP(channelId, text, image, reply_to, isDM, dmChannelId);
+  }
 
-    ws.send(JSON.stringify({
-        type: 'new_message',
-        channelId: channelId,
-        dmChannelId: dmChannelId,
-        text: text,
-        image: image,
-        reply_to: reply_to,
-        isDM: isDM
-    }));
+  ws.send(JSON.stringify({
+    type: 'new_message',
+    channelId: channelId,
+    dmChannelId: dmChannelId,
+    text: text,
+    image: image,
+    reply_to: reply_to,
+    isDM: isDM
+  }));
 }
 
 function editMessageViaWebSocket(messageId, text, isDM, channelId, dmChannelId) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        console.error('WebSocket not connected');
-        return;
-    }
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    console.error('WebSocket not connected');
+    return;
+  }
 
-    ws.send(JSON.stringify({
-        type: 'edit_message',
-        messageId: messageId,
-        text: text,
-        isDM: isDM,
-        channelId: channelId,
-        dmChannelId: dmChannelId
-    }));
+  ws.send(JSON.stringify({
+    type: 'edit_message',
+    messageId: messageId,
+    text: text,
+    isDM: isDM,
+    channelId: channelId,
+    dmChannelId: dmChannelId
+  }));
 }
 
 function deleteMessageViaWebSocket(messageId, isDM, channelId, dmChannelId) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        console.error('WebSocket not connected');
-        return;
-    }
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    console.error('WebSocket not connected');
+    return;
+  }
 
-    ws.send(JSON.stringify({
-        type: 'delete_message',
-        messageId: messageId,
-        isDM: isDM,
-        channelId: channelId,
-        dmChannelId: dmChannelId
-    }));
+  ws.send(JSON.stringify({
+    type: 'delete_message',
+    messageId: messageId,
+    isDM: isDM,
+    channelId: channelId,
+    dmChannelId: dmChannelId
+  }));
 }
 
 function sendTypingIndicator(channelId, isDM, dmChannelId) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        return;
-    }
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    return;
+  }
 
-    ws.send(JSON.stringify({
-        type: 'typing',
-        channelId: channelId,
-        isDM: isDM,
-        dmChannelId: dmChannelId
-    }));
+  ws.send(JSON.stringify({
+    type: 'typing',
+    channelId: channelId,
+    isDM: isDM,
+    dmChannelId: dmChannelId
+  }));
 }
 
 function handleNewChannelMessage(channelId, message) {
   // Add/update sender with latest data
-    upsertUser({
-      id: message.user_id,
-      name: message.display_name || message.username,
-      color: message.color,
-      accent: message.accent,
-      avatar: message.avatar
-    });
+  upsertUser({
+    id: message.user_id,
+    name: message.display_name || message.username,
+    color: message.color,
+    accent: message.accent,
+    avatar: message.avatar
+  });
 
-    const c = ch();
-    if (!c || c.id !== channelId) return;
+  const c = ch();
+  if (!c || c.id !== channelId) return;
 
   c.msgs.push({
-        id: message.id,
-        uid: message.user_id === S.me.id ? 'me' : message.user_id,
-        text: message.text || '',
-        img: message.image || null,
-        reply: message.reply_to,
-        time: new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
-        edited: message.edited,
-        reactions: message.reactions || {},
-        username: message.username,
-        userColor: message.color || '#58a6ff',
-        sys: message.is_system || false
-    });
+    id: message.id,
+    uid: message.user_id === S.me.id ? 'me' : message.user_id,
+    text: message.text || '',
+    img: message.image || null,
+    reply: message.reply_to,
+    time: new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+              edited: message.edited,
+              reactions: message.reactions || {},
+              username: message.username,
+              userColor: message.color || '#58a6ff',
+              sys: message.is_system || false
+  });
 
-    renderMsgs();
-    autoSave();
+  renderMsgs();
+  autoSave();
 }
 
 function handleNewDMMessage(dmChannelId, message) {
   // Add/update sender with latest data
-    upsertUser({
-      id: message.user_id,
-      name: message.display_name || message.username,
-      color: message.color,
-      accent: message.accent,
-      avatar: message.avatar
-    });
+  upsertUser({
+    id: message.user_id,
+    name: message.display_name || message.username,
+    color: message.color,
+    accent: message.accent,
+    avatar: message.avatar
+  });
 
-    const c = ch();
-    if (!c || c.id !== dmChannelId) return;
+  const c = ch();
+  if (!c || c.id !== dmChannelId) return;
 
   // Remove optimistic temp message if this is our own echo
-    if (message.user_id === S.me.id) {
-        const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
-        if (tempIdx > -1) c.msgs.splice(tempIdx, 1);
-    }
+  if (message.user_id === S.me.id) {
+    const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
+    if (tempIdx > -1) c.msgs.splice(tempIdx, 1);
+  }
 
-    c.msgs.push({
-        id: message.id,
-        uid: message.user_id === S.me.id ? 'me' : message.user_id,
-        text: message.text || '',
-        img: message.image || null,
-        reply: message.reply_to,
-        time: new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
-        edited: message.edited,
-        reactions: message.reactions || {},
-        username: message.username,
-        userColor: message.color || '#58a6ff',
-        sys: message.is_system || false
-    });
+  c.msgs.push({
+    id: message.id,
+    uid: message.user_id === S.me.id ? 'me' : message.user_id,
+    text: message.text || '',
+    img: message.image || null,
+    reply: message.reply_to,
+    time: new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+              edited: message.edited,
+              reactions: message.reactions || {},
+              username: message.username,
+              userColor: message.color || '#58a6ff',
+              sys: message.is_system || false
+  });
 
-    renderMsgs();
-    autoSave();
+  renderMsgs();
+  autoSave();
 }
 
 function handleMessageEdited(channelOrDmId, messageId, newText, isDM) {
-    const c = ch();
-    if (!c) return;
+  const c = ch();
+  if (!c) return;
 
-    const message = c.msgs.find(m => m.id === messageId);
-    if (message) {
-        message.text = newText;
-        message.edited = true;
-        renderMsgs();
-        autoSave();
-    }
+  const message = c.msgs.find(m => m.id === messageId);
+  if (message) {
+    message.text = newText;
+    message.edited = true;
+    renderMsgs();
+    autoSave();
+  }
 }
 
 function handleMessageDeleted(channelOrDmId, messageId, isDM) {
-    const c = ch();
-    if (!c) return;
+  const c = ch();
+  if (!c) return;
 
-    const index = c.msgs.findIndex(m => m.id === messageId);
-    if (index !== -1) {
-        c.msgs.splice(index, 1);
-        const row = document.querySelector(`.msg-row[data-id="${messageId}"]`);
-        if (row) row.remove();
-        autoSave();
-    }
+  const index = c.msgs.findIndex(m => m.id === messageId);
+  if (index !== -1) {
+    c.msgs.splice(index, 1);
+    const row = document.querySelector(`.msg-row[data-id="${messageId}"]`);
+    if (row) row.remove();
+    autoSave();
+  }
 }
 
 function handleTypingIndicator(data) {
-    console.log(`${data.username} is typing...`);
+  console.log(`${data.username} is typing...`);
 }
 
 async function sendMessageViaHTTP(channelId, text, image, reply_to, isDM, dmChannelId) {
-    const token = getToken();
-    const url = isDM
-        ? `${API_URL}/dms/${dmChannelId}/messages`
-        : `${API_URL}/channels/${channelId}/messages`;
+  const token = getToken();
+  const url = isDM
+  ? `${API_URL}/dms/${dmChannelId}/messages`
+  : `${API_URL}/channels/${channelId}/messages`;
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ text, image, reply_to })
-        });
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ text, image, reply_to })
+    });
 
-        if (!response.ok) {
-            throw new Error('Failed to send message');
-        }
-
-        const message = await response.json();
-
-        if (isDM) {
-            handleNewDMMessage(dmChannelId, message);
-        } else {
-            handleNewChannelMessage(channelId, message);
-        }
-    } catch (error) {
-        console.error('Error sending message via HTTP:', error);
-        alert('Failed to send message');
+    if (!response.ok) {
+      throw new Error('Failed to send message');
     }
+
+    const message = await response.json();
+
+    if (isDM) {
+      handleNewDMMessage(dmChannelId, message);
+    } else {
+      handleNewChannelMessage(channelId, message);
+    }
+  } catch (error) {
+    console.error('Error sending message via HTTP:', error);
+    alert('Failed to send message');
+  }
 }
 
 console.log('WebSocket client code loaded');
@@ -3464,248 +3464,248 @@ const API = API_URL; // Use existing API_URL variable
 
 // Load current user
 (async function initUserSearch() {
-    try {
-        const res = await fetch(`${API}/me`, {
-            headers: { Authorization: `Bearer ${getToken()}` }
-        });
-        if (res.ok) {
-            const user = await res.json();
-            currentUserId = user.id;
-            console.log('Current user loaded:', currentUserId);
-        }
-    } catch (err) {
-        console.error('Init user search error:', err);
+  try {
+    const res = await fetch(`${API}/me`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    if (res.ok) {
+      const user = await res.json();
+      currentUserId = user.id;
+      console.log('Current user loaded:', currentUserId);
     }
+  } catch (err) {
+    console.error('Init user search error:', err);
+  }
 })();
 
 // Close search modal
 document.addEventListener('click', (e) => {
-    if (e.target.id === 'user-search-close') {
-        document.getElementById('user-search-overlay').classList.remove('show');
-        document.getElementById('user-search-input').value = '';
-        document.getElementById('user-search-results').innerHTML = '';
-    }
-    if (e.target.id === 'friend-requests-close') {
-        document.getElementById('friend-requests-overlay').classList.remove('show');
-    }
+  if (e.target.id === 'user-search-close') {
+    document.getElementById('user-search-overlay').classList.remove('show');
+    document.getElementById('user-search-input').value = '';
+    document.getElementById('user-search-results').innerHTML = '';
+  }
+  if (e.target.id === 'friend-requests-close') {
+    document.getElementById('friend-requests-overlay').classList.remove('show');
+  }
 });
 
 // Search as you type
 let searchTimeout;
 document.addEventListener('input', (e) => {
-    if (e.target.id === 'user-search-input') {
-        clearTimeout(searchTimeout);
-        const query = e.target.value.trim();
+  if (e.target.id === 'user-search-input') {
+    clearTimeout(searchTimeout);
+    const query = e.target.value.trim();
 
-        if (query.length === 0) {
-            document.getElementById('user-search-results').innerHTML = '';
-            return;
-        }
-
-        searchTimeout = setTimeout(() => searchUsers(query), 300);
+    if (query.length === 0) {
+      document.getElementById('user-search-results').innerHTML = '';
+      return;
     }
+
+    searchTimeout = setTimeout(() => searchUsers(query), 300);
+  }
 });
 
 async function searchUsers(query) {
-    try {
-        console.log('🔍 Searching for:', query);
-        console.log('📡 API URL:', `${API}/users/search?q=${encodeURIComponent(query)}`);
-        console.log('🔑 Token:', getToken() ? 'Present' : 'MISSING');
+  try {
+    console.log('🔍 Searching for:', query);
+    console.log('📡 API URL:', `${API}/users/search?q=${encodeURIComponent(query)}`);
+    console.log('🔑 Token:', getToken() ? 'Present' : 'MISSING');
 
-        const res = await fetch(`${API}/users/search?q=${encodeURIComponent(query)}`, {
-            headers: { Authorization: `Bearer ${getToken()}` }
-        });
+    const res = await fetch(`${API}/users/search?q=${encodeURIComponent(query)}`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
 
-        console.log('📨 Response status:', res.status);
+    console.log('📨 Response status:', res.status);
 
-        if (!res.ok) {
-            const errorData = await res.json();
-            console.error('❌ API Error:', errorData);
-            throw new Error(errorData.error || 'Search failed');
-        }
-
-        const users = await res.json();
-        console.log('✅ Found users:', users);
-        await displaySearchResults(users);
-    } catch (err) {
-        console.error('💥 Search error:', err);
-        document.getElementById('user-search-results').innerHTML =
-            `<div class="search-empty">❌ Error: ${err.message}</div>`;
+    if (!res.ok) {
+      const errorData = await res.json();
+      console.error('❌ API Error:', errorData);
+      throw new Error(errorData.error || 'Search failed');
     }
+
+    const users = await res.json();
+    console.log('✅ Found users:', users);
+    await displaySearchResults(users);
+  } catch (err) {
+    console.error('💥 Search error:', err);
+    document.getElementById('user-search-results').innerHTML =
+    `<div class="search-empty">❌ Error: ${err.message}</div>`;
+  }
 }
 
 // Display results
 async function displaySearchResults(users) {
-    const container = document.getElementById('user-search-results');
+  const container = document.getElementById('user-search-results');
 
-    if (users.length === 0) {
-        container.innerHTML = '<div class="search-empty">No users found</div>';
-        return;
+  if (users.length === 0) {
+    container.innerHTML = '<div class="search-empty">No users found</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+
+  for (const user of users) {
+    try {
+      const statusRes = await fetch(`${API}/friends/status/${user.id}`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      const statusData = await statusRes.json();
+
+      const item = document.createElement('div');
+      item.className = 'user-search-item';
+
+      const avatar = user.avatar
+      ? `<img src="${user.avatar}" alt="${user.username}">`
+      : `<div style="color: ${user.color}">${user.username[0].toUpperCase()}</div>`;
+
+      let actionButtons = '';
+
+      if (statusData.status === 'none') {
+        actionButtons = `<button class="user-search-btn primary" onclick="sendFriendRequest(${user.id}, this)">Add Friend</button>`;
+      } else if (statusData.status === 'pending_sent') {
+        actionButtons = `
+        <button class="user-search-btn secondary" disabled>Request Sent</button>
+        <button class="user-search-btn secondary" onclick="cancelFriendRequest(${statusData.requestId}, this)">Cancel</button>
+        `;
+      } else if (statusData.status === 'pending_received') {
+        actionButtons = `
+        <button class="user-search-btn primary" onclick="acceptFriendRequest(${statusData.requestId}, this)">Accept</button>
+        <button class="user-search-btn secondary" onclick="declineFriendRequest(${statusData.requestId}, this)">Decline</button>
+        `;
+      } else if (statusData.status === 'accepted') {
+        actionButtons = `<button class="user-search-btn primary" onclick="openDMWithUser(${user.id})">Message</button>`;
+      }
+
+      item.innerHTML = `
+      <div class="user-search-avatar">${avatar}</div>
+      <div class="user-search-info">
+      <div class="user-search-name" style="color: ${user.color}">
+      ${user.display_name || user.username}
+      </div>
+      <div class="user-search-username">@${user.username}</div>
+      </div>
+      <div class="user-search-actions">${actionButtons}</div>
+      `;
+
+      container.appendChild(item);
+    } catch (err) {
+      console.error('Error displaying user:', err);
     }
-
-    container.innerHTML = '';
-
-    for (const user of users) {
-        try {
-            const statusRes = await fetch(`${API}/friends/status/${user.id}`, {
-                headers: { Authorization: `Bearer ${getToken()}` }
-            });
-            const statusData = await statusRes.json();
-
-            const item = document.createElement('div');
-            item.className = 'user-search-item';
-
-            const avatar = user.avatar
-                ? `<img src="${user.avatar}" alt="${user.username}">`
-                : `<div style="color: ${user.color}">${user.username[0].toUpperCase()}</div>`;
-
-            let actionButtons = '';
-
-            if (statusData.status === 'none') {
-                actionButtons = `<button class="user-search-btn primary" onclick="sendFriendRequest(${user.id}, this)">Add Friend</button>`;
-            } else if (statusData.status === 'pending_sent') {
-                actionButtons = `
-                    <button class="user-search-btn secondary" disabled>Request Sent</button>
-                    <button class="user-search-btn secondary" onclick="cancelFriendRequest(${statusData.requestId}, this)">Cancel</button>
-                `;
-            } else if (statusData.status === 'pending_received') {
-                actionButtons = `
-                    <button class="user-search-btn primary" onclick="acceptFriendRequest(${statusData.requestId}, this)">Accept</button>
-                    <button class="user-search-btn secondary" onclick="declineFriendRequest(${statusData.requestId}, this)">Decline</button>
-                `;
-            } else if (statusData.status === 'accepted') {
-                actionButtons = `<button class="user-search-btn primary" onclick="openDMWithUser(${user.id})">Message</button>`;
-            }
-
-            item.innerHTML = `
-                <div class="user-search-avatar">${avatar}</div>
-                <div class="user-search-info">
-                    <div class="user-search-name" style="color: ${user.color}">
-                        ${user.display_name || user.username}
-                    </div>
-                    <div class="user-search-username">@${user.username}</div>
-                </div>
-                <div class="user-search-actions">${actionButtons}</div>
-            `;
-
-            container.appendChild(item);
-        } catch (err) {
-            console.error('Error displaying user:', err);
-        }
-    }
+  }
 }
 
 // Send friend request
 async function sendFriendRequest(friendId, button) {
-    try {
-        button.disabled = true;
-        button.textContent = 'Sending...';
+  try {
+    button.disabled = true;
+    button.textContent = 'Sending...';
 
-        const res = await fetch(`${API}/friends/request`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${getToken()}`
-            },
-            body: JSON.stringify({ friendId })
-        });
+    const res = await fetch(`${API}/friends/request`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`
+      },
+      body: JSON.stringify({ friendId })
+    });
 
-        if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.error || 'Failed');
-        }
-
-        const request = await res.json();
-
-        // Notify via WebSocket
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-                type: 'friend_request_sent',
-                targetUserId: friendId,
-                requestId: request.id
-            }));
-        }
-
-        // Refresh search results if search is open
-        const searchInput = document.getElementById('user-search-input');
-        if (searchInput && searchInput.value) {
-          searchUsers(searchInput.value);
-        }
-        // Update badge
-        updateFriendBadge();
-
-    } catch (err) {
-        console.error('Send request error:', err);
-        alert(err.message);
-        button.disabled = false;
-        button.textContent = 'Add Friend';
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed');
     }
+
+    const request = await res.json();
+
+    // Notify via WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'friend_request_sent',
+        targetUserId: friendId,
+        requestId: request.id
+      }));
+    }
+
+    // Refresh search results if search is open
+    const searchInput = document.getElementById('user-search-input');
+    if (searchInput && searchInput.value) {
+      searchUsers(searchInput.value);
+    }
+    // Update badge
+    updateFriendBadge();
+
+  } catch (err) {
+    console.error('Send request error:', err);
+    alert(err.message);
+    button.disabled = false;
+    button.textContent = 'Add Friend';
+  }
 }
 
 // Accept friend request
 async function acceptFriendRequest(requestId, button) {
-    try {
-        button.disabled = true;
+  try {
+    button.disabled = true;
 
-        const res = await fetch(`${API}/friends/request/${requestId}/accept`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${getToken()}`
-            }
-        });
+    const res = await fetch(`${API}/friends/request/${requestId}/accept`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`
+      }
+    });
 
-        if (!res.ok) throw new Error('Failed to accept');
+    if (!res.ok) throw new Error('Failed to accept');
 
-        // Notify sender
-        const requestsRes = await fetch(`${API}/friends/requests`, {
-            headers: { Authorization: `Bearer ${getToken()}` }
-        });
-        const requests = await requestsRes.json();
-        const request = requests.find(r => r.id === requestId);
+    // Notify sender
+    const requestsRes = await fetch(`${API}/friends/requests`, {
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
+    const requests = await requestsRes.json();
+    const request = requests.find(r => r.id === requestId);
 
-        if (request && ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-                type: 'friend_request_accepted',
-                targetUserId: request.user_id,
-                requestId: requestId
-            }));
-        }
-
-        // Refresh search results if search is open
-        const searchInput = document.getElementById('user-search-input');
-        if (searchInput && searchInput.value) searchUsers(searchInput.value);
-        updateFriendBadge();
-
-    } catch (err) {
-        console.error('Accept error:', err);
-        alert('Failed to accept');
-        button.disabled = false;
+    if (request && ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'friend_request_accepted',
+        targetUserId: request.user_id,
+        requestId: requestId
+      }));
     }
+
+    // Refresh search results if search is open
+    const searchInput = document.getElementById('user-search-input');
+    if (searchInput && searchInput.value) searchUsers(searchInput.value);
+    updateFriendBadge();
+
+  } catch (err) {
+    console.error('Accept error:', err);
+    alert('Failed to accept');
+    button.disabled = false;
+  }
 }
 
 // Decline/Cancel request
 async function declineFriendRequest(requestId, button) {
-    try {
-        button.disabled = true;
+  try {
+    button.disabled = true;
 
-        const res = await fetch(`${API}/friends/request/${requestId}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${getToken()}` }
-        });
+    const res = await fetch(`${API}/friends/request/${requestId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${getToken()}` }
+    });
 
-        if (!res.ok) throw new Error('Failed');
+    if (!res.ok) throw new Error('Failed');
 
-        // Refresh search results if search is open
-        const searchInput = document.getElementById('user-search-input');
-        if (searchInput && searchInput.value) searchUsers(searchInput.value);
-        updateFriendBadge();
+    // Refresh search results if search is open
+    const searchInput = document.getElementById('user-search-input');
+    if (searchInput && searchInput.value) searchUsers(searchInput.value);
+    updateFriendBadge();
 
-    } catch (err) {
-        console.error('Decline error:', err);
-        alert('Failed to decline');
-        button.disabled = false;
-    }
+  } catch (err) {
+    console.error('Decline error:', err);
+    alert('Failed to decline');
+    button.disabled = false;
+  }
 }
 
 /* ─── FRIENDS MODAL ─── */
@@ -3757,20 +3757,20 @@ async function loadFriendsList() {
     friends.forEach(f => {
       const u = f.user;
       const avInner = u.avatar
-        ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
-        : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
+      ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+      : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
 
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s';
       row.onmouseenter = () => row.style.background = 'var(--surface2)';
       row.onmouseleave = () => row.style.background = '';
       row.innerHTML = `
-        ${avInner}
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.display_name || u.username}</div>
-          <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
-        </div>
-        <button class="btn sec" style="font-size:12px;padding:6px 12px" data-dm-uid="${u.id}">💬 DM</button>
+      ${avInner}
+      <div style="flex:1;min-width:0">
+      <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.display_name || u.username}</div>
+      <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
+      </div>
+      <button class="btn sec" style="font-size:12px;padding:6px 12px" data-dm-uid="${u.id}">💬 DM</button>
       `;
       row.querySelector('[data-dm-uid]').onclick = async (e) => {
         e.stopPropagation();
@@ -3824,21 +3824,21 @@ async function loadFriendRequests() {
       requests.forEach(r => {
         const u = r.user;
         const avInner = u.avatar
-          ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
-          : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
+        ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+        : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
 
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px';
         row.innerHTML = `
-          ${avInner}
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'}">${u.display_name || u.username}</div>
-            <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
-          </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn pri" style="font-size:12px;padding:6px 12px" data-accept="${r.id}">✓ Accept</button>
-            <button class="btn dan" style="font-size:12px;padding:6px 12px" data-decline="${r.id}">✕</button>
-          </div>
+        ${avInner}
+        <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'}">${u.display_name || u.username}</div>
+        <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+        <button class="btn pri" style="font-size:12px;padding:6px 12px" data-accept="${r.id}">✓ Accept</button>
+        <button class="btn dan" style="font-size:12px;padding:6px 12px" data-decline="${r.id}">✕</button>
+        </div>
         `;
         row.querySelector('[data-accept]').onclick = async (e) => {
           await acceptFriendRequest(r.id, e.target);
@@ -3861,18 +3861,18 @@ async function loadFriendRequests() {
       sent.forEach(r => {
         const u = r.user;
         const avInner = u.avatar
-          ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
-          : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
+        ? `<img src="${u.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover">`
+        : `<div style="width:38px;height:38px;border-radius:50%;background:${u.color || '#58a6ff'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700">✦</div>`;
 
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;opacity:0.7';
         row.innerHTML = `
-          ${avInner}
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'}">${u.display_name || u.username}</div>
-            <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
-          </div>
-          <span style="font-size:12px;color:var(--dim)">⏳ Pending</span>
+        ${avInner}
+        <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px;color:${u.color || '#58a6ff'}">${u.display_name || u.username}</div>
+        <div style="font-size:12px;color:var(--dim)">@${u.username}</div>
+        </div>
+        <span style="font-size:12px;color:var(--dim)">⏳ Pending</span>
         `;
         panel.appendChild(row);
       });
@@ -3885,7 +3885,7 @@ async function loadFriendRequests() {
 
 // Cancel (same as decline)
 async function cancelFriendRequest(requestId, button) {
-    await declineFriendRequest(requestId, button);
+  await declineFriendRequest(requestId, button);
 }
 
 /* ─── FRIEND REQUEST BADGE ─── */
@@ -3945,44 +3945,44 @@ async function updateFriendBadge() {
 
 // Open DM
 async function openDMWithUser(userId) {
-    try {
-        const res = await fetch(`${API}/dms`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${getToken()}`
-            },
-            body: JSON.stringify({ otherUserId: userId })
-        });
+  try {
+    const res = await fetch(`${API}/dms`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`
+      },
+      body: JSON.stringify({ otherUserId: userId })
+    });
 
-        if (!res.ok) throw new Error('Failed to create DM');
+    if (!res.ok) throw new Error('Failed to create DM');
 
-        const dmChannel = await res.json();
+    const dmChannel = await res.json();
 
-        // Close search
-        document.getElementById('user-search-overlay').classList.remove('show');
+    // Close search
+    document.getElementById('user-search-overlay').classList.remove('show');
 
-        // Reload DMs and navigate to the new DM
-        await loadDMsFromDatabase();
+    // Reload DMs and navigate to the new DM
+    await loadDMsFromDatabase();
 
-        // Switch to home/DMs view
-        S.srvId = 'home';
-        S.view = 'dms';
-        S.chId = dmChannel.id;
+    // Switch to home/DMs view
+    S.srvId = 'home';
+    S.view = 'dms';
+    S.chId = dmChannel.id;
 
-        renderAll();
+    renderAll();
 
-        console.log('DM Channel opened:', dmChannel);
+    console.log('DM Channel opened:', dmChannel);
 
-    } catch (err) {
-        console.error('Open DM error:', err);
-        alert('Failed to open DM');
-    }
+  } catch (err) {
+    console.error('Open DM error:', err);
+    alert('Failed to open DM');
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   EXPLORE PAGE
-   ═══════════════════════════════════════════════════════════ */
+ *   EXPLORE PAGE
+ *   ═══════════════════════════════════════════════════════════ */
 
 let explorePosts = [];
 let exploreLoadedCount = 0;
@@ -3995,6 +3995,19 @@ function openExplorePage() {
   explorePosts = [];
   exploreLoadedCount = 0;
   document.getElementById('explore-feed').innerHTML = '';
+  // Restore saved background
+  const savedBg = localStorage.getItem('syntaxy_explore_bg');
+  const bgLayer = document.getElementById('explore-bg-layer');
+  const page = document.getElementById('explore-page');
+  if (savedBg) {
+    bgLayer.style.backgroundImage = `url(${savedBg})`;
+    bgLayer.classList.add('active');
+    page.classList.add('glass');
+  } else {
+    bgLayer.style.backgroundImage = '';
+    bgLayer.classList.remove('active');
+    page.classList.remove('glass');
+  }
   loadExplorePosts();
 }
 
@@ -4004,6 +4017,27 @@ function closeExplorePage() {
 
 // Exit button
 document.getElementById('btn-exit-explore').addEventListener('click', closeExplorePage);
+
+// Background editor
+document.getElementById('btn-explore-bg').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      localStorage.setItem('syntaxy_explore_bg', dataUrl);
+      document.getElementById('explore-bg-layer').style.backgroundImage = `url(${dataUrl})`;
+      document.getElementById('explore-bg-layer').classList.add('active');
+      document.getElementById('explore-page').classList.add('glass');
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+});
 
 // Upload button
 document.getElementById('btn-explore-upload').addEventListener('click', () => {
@@ -4121,37 +4155,37 @@ function createExplorePost(post, index) {
   }
 
   div.innerHTML = `
-    <div class="explore-post-header">
-      <div class="explore-post-user" data-uid="${post.user_id}">
-        <span class="explore-post-user-dot"></span>
-        ${username}
-      </div>
-      ${communityTag}
-    </div>
-    <h2 class="explore-post-title">${post.title}</h2>
-    <div class="explore-post-body">${contentHTML}</div>
-    <div class="explore-post-actions">
-      <button class="explore-act-btn view-act">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        <span>${exploreFormatNum(post.views || 0)}</span>
-      </button>
-      <button class="explore-act-btn like-act ${post.user_liked ? 'liked' : ''}" data-post-id="${post.id}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-        <span class="like-count">${exploreFormatNum(post.likes)}</span>
-      </button>
-      <button class="explore-act-btn dislike-act ${post.user_disliked ? 'disliked' : ''}" data-post-id="${post.id}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
-        <span class="dislike-count">${exploreFormatNum(post.dislikes)}</span>
-      </button>
-      <button class="explore-act-btn comment-act" data-post-id="${post.id}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <span>Comment</span>
-      </button>
-      <button class="explore-act-btn share-act">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-        <span>Share</span>
-      </button>
-    </div>
+  <div class="explore-post-header">
+  <div class="explore-post-user" data-uid="${post.user_id}">
+  <span class="explore-post-user-dot"></span>
+  ${username}
+  </div>
+  ${communityTag}
+  </div>
+  <h2 class="explore-post-title">${post.title}</h2>
+  <div class="explore-post-body">${contentHTML}</div>
+  <div class="explore-post-actions">
+  <button class="explore-act-btn view-act">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+  <span>${exploreFormatNum(post.views || 0)}</span>
+  </button>
+  <button class="explore-act-btn like-act ${post.user_liked ? 'liked' : ''}" data-post-id="${post.id}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+  <span class="like-count">${exploreFormatNum(post.likes)}</span>
+  </button>
+  <button class="explore-act-btn dislike-act ${post.user_disliked ? 'disliked' : ''}" data-post-id="${post.id}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+  <span class="dislike-count">${exploreFormatNum(post.dislikes)}</span>
+  </button>
+  <button class="explore-act-btn comment-act" data-post-id="${post.id}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <span>Comment</span>
+  </button>
+  <button class="explore-act-btn share-act">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+  <span>Share</span>
+  </button>
+  </div>
   `;
 
   // Username click -> profile popup
@@ -4250,15 +4284,15 @@ async function openExploreComments(postId) {
     const username = post.display_name || post.username;
     const communityTag = post.community ? `<span class="explore-post-community">${post.community}</span>` : '';
     let contentHTML = post.content_type === 'text'
-      ? `<p>${post.content_data || ''}</p>`
-      : `<img src="${post.content_data}" alt="Post image" style="max-height:200px">`;
+    ? `<p>${post.content_data || ''}</p>`
+    : `<img src="${post.content_data}" alt="Post image" style="max-height:200px">`;
     preview.innerHTML = `
-      <div class="explore-post-header">
-        <div class="explore-post-user"><span class="explore-post-user-dot"></span>${username}</div>
-        ${communityTag}
-      </div>
-      <h2 class="explore-post-title">${post.title}</h2>
-      <div class="explore-post-body">${contentHTML}</div>
+    <div class="explore-post-header">
+    <div class="explore-post-user"><span class="explore-post-user-dot"></span>${username}</div>
+    ${communityTag}
+    </div>
+    <h2 class="explore-post-title">${post.title}</h2>
+    <div class="explore-post-body">${contentHTML}</div>
     `;
   }
 
@@ -4316,23 +4350,23 @@ function createExploreComment(comment, postId, allComments) {
   const username = comment.display_name || comment.username;
 
   div.innerHTML = `
-    <div class="explore-comment-author" data-uid="${comment.user_id}">${username}</div>
-    <div class="explore-comment-text">${comment.text}</div>
-    <div class="explore-comment-actions">
-      <button class="explore-comment-act c-like ${comment.user_liked ? 'liked' : ''}" data-cid="${comment.id}">
-        <svg viewBox="0 0 24 24" fill="${comment.user_liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-        <span>${comment.likes}</span>
-      </button>
-      <button class="explore-comment-act c-dislike ${comment.user_disliked ? 'disliked' : ''}" data-cid="${comment.id}">
-        <svg viewBox="0 0 24 24" fill="${comment.user_disliked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
-        <span>${comment.dislikes}</span>
-      </button>
-      <button class="explore-comment-act c-reply-btn">Reply</button>
-    </div>
-    <div class="explore-comment-reply-area" id="explore-reply-${comment.id}">
-      <textarea placeholder="Write a reply..."></textarea>
-      <button data-parent-id="${comment.id}">Post Reply</button>
-    </div>
+  <div class="explore-comment-author" data-uid="${comment.user_id}">${username}</div>
+  <div class="explore-comment-text">${comment.text}</div>
+  <div class="explore-comment-actions">
+  <button class="explore-comment-act c-like ${comment.user_liked ? 'liked' : ''}" data-cid="${comment.id}">
+  <svg viewBox="0 0 24 24" fill="${comment.user_liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+  <span>${comment.likes}</span>
+  </button>
+  <button class="explore-comment-act c-dislike ${comment.user_disliked ? 'disliked' : ''}" data-cid="${comment.id}">
+  <svg viewBox="0 0 24 24" fill="${comment.user_disliked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+  <span>${comment.dislikes}</span>
+  </button>
+  <button class="explore-comment-act c-reply-btn">Reply</button>
+  </div>
+  <div class="explore-comment-reply-area" id="explore-reply-${comment.id}">
+  <textarea placeholder="Write a reply..."></textarea>
+  <button data-parent-id="${comment.id}">Post Reply</button>
+  </div>
   `;
 
   // Author click -> profile
@@ -4477,18 +4511,12 @@ document.getElementById('explore-upload-submit').addEventListener('click', async
       await api('/posts', { method: 'POST', body: { title, content_type: 'text', content_data: text, community } });
     } else {
       if (!exploreUploadedFile) { alert('Please select an image'); submitBtn.disabled = false; submitBtn.textContent = 'Post'; return; }
-      const formData = new FormData();
-      formData.append('image', exploreUploadedFile);
-      formData.append('title', title);
-      formData.append('community', community || '');
-
-      const token = getToken();
-      const response = await fetch(`${API_URL}/posts/image`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target.result);
+        reader.readAsDataURL(exploreUploadedFile);
       });
-      if (!response.ok) throw new Error('Upload failed');
+      await api('/posts', { method: 'POST', body: { title, content_type: 'image', content_data: base64, community } });
     }
 
     // Reload
