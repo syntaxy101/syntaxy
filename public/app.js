@@ -419,6 +419,49 @@ function ensureGalleryDefaults() {
   });
 }
 
+// Full state reset — wipe everything back to defaults
+function resetState() {
+  S.me = {id:'me',name:'',color:'#58a6ff',accent:'#3fb950',bio:'',avatar:'',banner:'',gallery:{items:[],bg:'',bgColor:'#0d1117',surface:'#161b22',acc1:'#58a6ff',acc2:'#3fb950',text:'#c9d1d9',border:'#30363d'}};
+  S.personalUI = {override:false,bg:'#0d1117',surface:'#161b22',acc1:'#58a6ff',acc2:'#3fb950',text:'#c9d1d9',border:'#30363d',sidebarStyle:'solid',sidebarGrad1:'#161b22',sidebarGrad2:'#1c2333'};
+  S.users = [];
+  S.servers = [];
+  S.srvId = null;
+  S.chId = null;
+  S.view = 'dms';
+  S.replyTo = null;
+  S.pendingImg = null;
+  S.pendingChBg = null;
+  S.ctxId = null;
+  S.ctxChId = null;
+  S.searchActive = false;
+  S.editingChannelId = null;
+  S.currentGalleryUserId = null;
+  S.unreadDMs = {};
+  S.dmLastActivity = {};
+  S.pinnedDMs = [];
+  _loadedChannels.clear();
+  _fetchingChannel = null;
+  lastRenderedChId = null;
+  // Clear user fetch cache
+  Object.keys(_userFetchCache).forEach(k => delete _userFetchCache[k]);
+  // Reset WebSocket reconnect counter
+  wsReconnectAttempts = 0;
+}
+
+// Wipe IndexedDB for current key
+function clearSavedState() {
+  return new Promise((resolve) => {
+    if (!db) { resolve(); return; }
+    try {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      store.delete('main');
+      tx.oncomplete = () => { console.log('Saved state cleared'); resolve(); };
+      tx.onerror = () => resolve();
+    } catch(e) { resolve(); }
+  });
+}
+
 // Auto-save on changes (debounced)
 let saveTimeout;
 function autoSave() {
@@ -539,7 +582,15 @@ async function initApp() {
   const loginScreen = document.getElementById('login-screen');
 
   await openDB();
-  const hasLoaded = await loadState();
+
+  // Only load saved state if we have a token (user didn't log out)
+  const token = getToken();
+  const hasLoaded = token ? await loadState() : false;
+
+  // If no token, wipe any stale state that might exist
+  if (!token) {
+    await clearSavedState();
+  }
 
   if (!hasLoaded) {
     // build DMs - create a special "home" server just for DMs
@@ -575,8 +626,6 @@ async function initApp() {
 
   // Ensure gallery defaults
   ensureGalleryDefaults();
-  
-  _loadedChannels.clear();
 
   // Check if user is logged in
   const isLoggedIn = S.me.name && S.me.name.trim() !== '';
@@ -1078,90 +1127,88 @@ function renderBg(){
 
 let lastRenderedChId = null;
 const _loadedChannels = new Set();
-let _fetchingChannel = null;
 
 async function renderMsgs(){
   const c=ch(); if(!c) return;
   const wrap=document.getElementById('messages-wrap');
-  const currentChId = S.chId;
-  
-  // IMMEDIATELY clear on channel switch
-  if(lastRenderedChId !== currentChId) {
-    wrap.innerHTML = '';
-    lastRenderedChId = currentChId;
-  }
-  
-  // Show cached messages right away (before fetch)
-  if(c.msgs && c.msgs.length > 0 && wrap.children.length === 0) {
-    c.msgs.forEach(m => {
-      wrap.appendChild(createMsgRow(m));
-    });
-    wrap.scrollTop = wrap.scrollHeight;
-  }
-  
-  // Decide if we need to fetch from API
-  const shouldFetch = typeof c.id === 'number' && !_loadedChannels.has(c.id);
-  if (!shouldFetch) return;
-  
-  // Prevent double-fetching same channel
-  if (_fetchingChannel === c.id) return;
-  _fetchingChannel = c.id;
-  
-  try {
-    const endpoint = c.type === 'dm'
-    ? `/dms/${c.id}/messages`
-    : `/channels/${c.id}/messages`;
-    
-    const messages = await api(endpoint);
-    
-    // Bail if user switched away during fetch
-    if (S.chId !== currentChId) {
-      _fetchingChannel = null;
-      return;
-    }
-    
+
+  // Load messages from API - always re-fetch DMs to get messages sent while away
+  const shouldFetch = typeof c.id === 'number' && (!_loadedChannels.has(c.id) || c.msgs.length === 0 || c.type === 'dm');
+  if (shouldFetch) {
     _loadedChannels.add(c.id);
-    
-    messages.forEach(m => {
-      upsertUser({
-        id: m.user_id,
-        name: m.display_name || m.username,
-        color: m.color,
-        accent: m.accent,
-        avatar: m.avatar
+    try {
+      const endpoint = c.type === 'dm'
+      ? `/dms/${c.id}/messages`
+      : `/channels/${c.id}/messages`;
+
+      const messages = await api(endpoint);
+      // Add/update message authors with latest data
+      messages.forEach(m => {
+        upsertUser({
+          id: m.user_id,
+          name: m.display_name || m.username,
+          color: m.color,
+          accent: m.accent,
+          avatar: m.avatar
+        });
       });
-    });
-    
-    c.msgs = messages.map(m => ({
-      id: m.id,
-      uid: m.user_id === S.me.id ? 'me' : m.user_id,
-      text: m.text || '',
-      img: m.image || null,
-      reply: m.reply_to,
-      time: new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
-                                edited: m.edited,
-                                reactions: m.reactions || {},
-                                username: m.username,
-                                userColor: m.color || '#58a6ff'
-    }));
-    
-    // Bail again if switched away
-    if (S.chId !== currentChId) {
-      _fetchingChannel = null;
-      return;
+      c.msgs = messages.map(m => ({
+        id: m.id,
+        uid: m.user_id === S.me.id ? 'me' : m.user_id,
+        text: m.text || '',
+        img: m.image || null,
+        reply: m.reply_to,
+        time: new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+                                  edited: m.edited,
+                                  reactions: m.reactions || {},
+                                  username: m.username,
+                                  userColor: m.color || '#58a6ff'
+      }));
+    } catch (err) {
+      console.error('Failed to load messages:', err);
+      _loadedChannels.delete(c.id);
     }
-    
-    // Re-render with fresh data
+  }
+
+  // If we switched channels, clear everything and do full render
+  if(lastRenderedChId !== S.chId) {
     wrap.innerHTML = '';
-    c.msgs.forEach(m => {
-      wrap.appendChild(createMsgRow(m));
-    });
+    lastRenderedChId = S.chId;
+
+    if(c.msgs && c.msgs.length > 0) {
+      c.msgs.forEach(m => {
+        const row = createMsgRow(m);
+        wrap.appendChild(row);
+      });
+    }
     wrap.scrollTop = wrap.scrollHeight;
-    
-  } catch (err) {
-    console.error('Failed to load messages:', err);
-  } finally {
-    _fetchingChannel = null;
+    return;
+  }
+
+  // Same channel - only add new messages
+  const existingIds = new Set(
+    Array.from(wrap.querySelectorAll('.msg-row[data-id]'))
+    .map(el => el.dataset.id).filter(Boolean)
+  );
+
+  const newMessages = c.msgs.filter(m => !existingIds.has(String(m.id)));
+
+  // Append only new messages with animation
+  newMessages.forEach(m => {
+    const row = createMsgRow(m);
+    row.style.opacity = '0';
+    row.style.transform = 'translateY(20px)';
+    wrap.appendChild(row);
+
+    requestAnimationFrame(() => {
+      row.style.opacity = '1';
+      row.style.transform = 'translateY(0)';
+    });
+  });
+
+  // Auto-scroll if user is near bottom
+  if(wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 150) {
+    wrap.scrollTop = wrap.scrollHeight;
   }
 }
 
@@ -1242,12 +1289,6 @@ function renderAll(){
   renderSidebar();
   renderHeader();
   renderBg();
-  // Clear old messages immediately before async fetch starts
-  const wrap = document.getElementById('messages-wrap');
-  if(lastRenderedChId !== S.chId) {
-    wrap.innerHTML = '';
-    lastRenderedChId = S.chId;
-  }
   renderMsgs();
 }
 
@@ -1697,18 +1738,19 @@ async function send() {
 
   // If it's a real channel (from database), send via WebSocket
   if (c.type === 'ch' && typeof c.id === 'number') {
-    // Optimistic render
+    const tempId = '_tmp_' + Date.now();
     c.msgs.push({
-      id: '_tmp_' + Date.now(), uid: 'me', text, img: tempImg,
-                reply: tempReply, time: T(), edited: false, reactions: {}, _temp: true
+      id: tempId, uid: 'me', text, img: tempImg, reply: tempReply,
+      time: T(), edited: false, reactions: {}, _temp: true
     });
     renderMsgs();
     sendMessageViaWebSocket(channelId, text, tempImg, tempReply, false, null);
   } else if (isDM) {
-    // Optimistic render
+    // Optimistic: show message immediately
+    const tempId = '_tmp_' + Date.now();
     c.msgs.push({
-      id: '_tmp_' + Date.now(), uid: 'me', text, img: tempImg,
-                reply: tempReply, time: T(), edited: false, reactions: {}, _temp: true
+      id: tempId, uid: 'me', text, img: tempImg, reply: tempReply,
+      time: T(), edited: false, reactions: {}, _temp: true
     });
     renderMsgs();
     sendMessageViaWebSocket(null, text, tempImg, tempReply, true, dmChannelId);
@@ -2783,7 +2825,24 @@ async function handleAuth() {
 
   try {
     if (isLoginMode) {
-      // LOGIN
+      // LOGIN — clear any leftover state from previous account
+      resetState();
+      await clearSavedState();
+
+      // Rebuild home server shell
+      S.servers.push({
+        id: 'home', name: 'Home', icon: '🏠', isAdmin: true,
+        banner: '', defChBg: '', iconImg: '',
+        aesthetics: {
+          bg: '#0d1117', surface: '#161b22', acc1: '#58a6ff', acc2: '#3fb950',
+          text: '#c9d1d9', border: '#30363d', sidebarStyle: 'solid',
+          sidebarGrad1: '#161b22', sidebarGrad2: '#1c2333',
+          sidebarOpacity:1, sidebarBlur:10
+        },
+        channels: [], dms: []
+      });
+      S.srvId = 'home';
+
       const data = await api('/auth/login', {
         method: 'POST',
         body: { username, password }
@@ -2830,7 +2889,24 @@ async function handleAuth() {
       initWebSocket();
 
     } else {
-      // REGISTER
+      // REGISTER — clear any leftover state from previous account
+      resetState();
+      await clearSavedState();
+
+      // Rebuild home server shell
+      S.servers.push({
+        id: 'home', name: 'Home', icon: '🏠', isAdmin: true,
+        banner: '', defChBg: '', iconImg: '',
+        aesthetics: {
+          bg: '#0d1117', surface: '#161b22', acc1: '#58a6ff', acc2: '#3fb950',
+          text: '#c9d1d9', border: '#30363d', sidebarStyle: 'solid',
+          sidebarGrad1: '#161b22', sidebarGrad2: '#1c2333',
+          sidebarOpacity:1, sidebarBlur:10
+        },
+        channels: [], dms: []
+      });
+      S.srvId = 'home';
+
       if (password !== passwordConfirm) {
         showLoginError('Passwords do not match');
         return;
@@ -2896,11 +2972,11 @@ function loginUser(username, userData) {
 }
 
 /* ─── LOGOUT ─── */
-document.getElementById('btn-logout').onclick = () => {
+document.getElementById('btn-logout').onclick = async () => {
   if(!confirm('Log out? Your data will be saved.')) return;
 
-  // Save current state first
-  saveState();
+  // Save current user's state first
+  await saveState();
 
   // Disconnect WebSocket
   if (ws) {
@@ -2908,8 +2984,28 @@ document.getElementById('btn-logout').onclick = () => {
     ws = null;
   }
 
-  // Clear the logged-in user's name (but keep their data)
-  S.me.name = '';
+  // Remove auth token
+  removeToken();
+
+  // Wipe IndexedDB so next login starts clean
+  await clearSavedState();
+
+  // Reset all in-memory state
+  resetState();
+
+  // Rebuild the home server shell (needed for DMs view)
+  S.servers.push({
+    id: 'home', name: 'Home', icon: '🏠', isAdmin: true,
+    banner: '', defChBg: '', iconImg: '',
+    aesthetics: {
+      bg: '#0d1117', surface: '#161b22', acc1: '#58a6ff', acc2: '#3fb950',
+      text: '#c9d1d9', border: '#30363d', sidebarStyle: 'solid',
+      sidebarGrad1: '#161b22', sidebarGrad2: '#1c2333',
+      sidebarOpacity:1, sidebarBlur:10
+    },
+    channels: [], dms: []
+  });
+  S.srvId = 'home';
 
   // Show login screen
   document.getElementById('login-screen').style.display = 'flex';
@@ -3421,7 +3517,7 @@ function handleNewChannelMessage(channelId, message) {
 
   const c = ch();
   if (!c || c.id !== channelId) return;
-  
+
   // Remove optimistic temp message
   if (message.user_id === S.me.id) {
     const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
@@ -3431,7 +3527,7 @@ function handleNewChannelMessage(channelId, message) {
       c.msgs.splice(tempIdx, 1);
     }
   }
-  
+
   c.msgs.push({
     id: message.id,
     uid: message.user_id === S.me.id ? 'me' : message.user_id,
