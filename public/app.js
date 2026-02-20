@@ -575,6 +575,8 @@ async function initApp() {
 
   // Ensure gallery defaults
   ensureGalleryDefaults();
+  
+  _loadedChannels.clear();
 
   // Check if user is logged in
   const isLoggedIn = S.me.name && S.me.name.trim() !== '';
@@ -958,17 +960,17 @@ function renderSidebar(){
 
     dmList.forEach(d=>{
       const u=U(d.userId);
-      
+
       const el=document.createElement('div');
       const unreadCount = S.unreadDMs[d.id] || 0;
       const isPinned = S.pinnedDMs.includes(d.id);
       el.className='ch-item'+(d.id===S.chId?' active':'')+(unreadCount?' dm-unread':'');
       el.dataset.dmid = d.id;
-      
+
       const countLabel = unreadCount > 10 ? '10+' : (unreadCount > 0 ? String(unreadCount) : '');
       const pinIcon = isPinned ? '<span class="dm-pin-icon" title="Pinned">📌</span>' : '';
       const badgeHTML = countLabel ? `<span class="dm-unread-badge">${countLabel}</span>` : '';
-      
+
       el.innerHTML=`<div class="dm-av-sm">${avHTML(u,24)}</div>${pinIcon}<span class="ch-name">${u.name}</span>${badgeHTML}`;
       el.onclick=()=>{
         S.chId=d.id;
@@ -1076,48 +1078,92 @@ function renderBg(){
 
 let lastRenderedChId = null;
 const _loadedChannels = new Set();
+let _fetchingChannel = null;
 
 async function renderMsgs(){
   const c=ch(); if(!c) return;
   const wrap=document.getElementById('messages-wrap');
-
-  // Load messages from API - always re-fetch DMs to get messages sent while away
-  const shouldFetch = typeof c.id === 'number' && (!_loadedChannels.has(c.id) || c.msgs.length === 0 || c.type === 'dm');
-  if (shouldFetch) {
-    _loadedChannels.add(c.id);
-    try {
-      const endpoint = c.type === 'dm'
-      ? `/dms/${c.id}/messages`
-      : `/channels/${c.id}/messages`;
-
-      const messages = await api(endpoint);
-      // Add/update message authors with latest data
-      messages.forEach(m => {
-        upsertUser({
-          id: m.user_id,
-          name: m.display_name || m.username,
-          color: m.color,
-          accent: m.accent,
-          avatar: m.avatar
-        });
-      });
-      c.msgs = messages.map(m => ({
-        id: m.id,
-        uid: m.user_id === S.me.id ? 'me' : m.user_id,
-        text: m.text || '',
-        img: m.image || null,
-        reply: m.reply_to,
-        time: new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
-                                  edited: m.edited,
-                                  reactions: m.reactions || {},
-                                  username: m.username,
-                                  userColor: m.color || '#58a6ff'
-      }));
-    } catch (err) {
-      console.error('Failed to load messages:', err);
-      _loadedChannels.delete(c.id);
-    }
+  const currentChId = S.chId;
+  
+  // IMMEDIATELY clear on channel switch
+  if(lastRenderedChId !== currentChId) {
+    wrap.innerHTML = '';
+    lastRenderedChId = currentChId;
   }
+  
+  // Show cached messages right away (before fetch)
+  if(c.msgs && c.msgs.length > 0 && wrap.children.length === 0) {
+    c.msgs.forEach(m => {
+      wrap.appendChild(createMsgRow(m));
+    });
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+  
+  // Decide if we need to fetch from API
+  const shouldFetch = typeof c.id === 'number' && !_loadedChannels.has(c.id);
+  if (!shouldFetch) return;
+  
+  // Prevent double-fetching same channel
+  if (_fetchingChannel === c.id) return;
+  _fetchingChannel = c.id;
+  
+  try {
+    const endpoint = c.type === 'dm'
+    ? `/dms/${c.id}/messages`
+    : `/channels/${c.id}/messages`;
+    
+    const messages = await api(endpoint);
+    
+    // Bail if user switched away during fetch
+    if (S.chId !== currentChId) {
+      _fetchingChannel = null;
+      return;
+    }
+    
+    _loadedChannels.add(c.id);
+    
+    messages.forEach(m => {
+      upsertUser({
+        id: m.user_id,
+        name: m.display_name || m.username,
+        color: m.color,
+        accent: m.accent,
+        avatar: m.avatar
+      });
+    });
+    
+    c.msgs = messages.map(m => ({
+      id: m.id,
+      uid: m.user_id === S.me.id ? 'me' : m.user_id,
+      text: m.text || '',
+      img: m.image || null,
+      reply: m.reply_to,
+      time: new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+                                edited: m.edited,
+                                reactions: m.reactions || {},
+                                username: m.username,
+                                userColor: m.color || '#58a6ff'
+    }));
+    
+    // Bail again if switched away
+    if (S.chId !== currentChId) {
+      _fetchingChannel = null;
+      return;
+    }
+    
+    // Re-render with fresh data
+    wrap.innerHTML = '';
+    c.msgs.forEach(m => {
+      wrap.appendChild(createMsgRow(m));
+    });
+    wrap.scrollTop = wrap.scrollHeight;
+    
+  } catch (err) {
+    console.error('Failed to load messages:', err);
+  } finally {
+    _fetchingChannel = null;
+  }
+}
 
   // If we switched channels, clear everything and do full render
   if(lastRenderedChId !== S.chId) {
@@ -1238,6 +1284,12 @@ function renderAll(){
   renderSidebar();
   renderHeader();
   renderBg();
+  // Clear old messages immediately before async fetch starts
+  const wrap = document.getElementById('messages-wrap');
+  if(lastRenderedChId !== S.chId) {
+    wrap.innerHTML = '';
+    lastRenderedChId = S.chId;
+  }
   renderMsgs();
 }
 
@@ -1687,19 +1739,18 @@ async function send() {
 
   // If it's a real channel (from database), send via WebSocket
   if (c.type === 'ch' && typeof c.id === 'number') {
-    const tempId = '_tmp_' + Date.now();
+    // Optimistic render
     c.msgs.push({
-      id: tempId, uid: 'me', text, img: tempImg, reply: tempReply,
-      time: T(), edited: false, reactions: {}, _temp: true
+      id: '_tmp_' + Date.now(), uid: 'me', text, img: tempImg,
+                reply: tempReply, time: T(), edited: false, reactions: {}, _temp: true
     });
     renderMsgs();
     sendMessageViaWebSocket(channelId, text, tempImg, tempReply, false, null);
   } else if (isDM) {
-    // Optimistic: show message immediately
-    const tempId = '_tmp_' + Date.now();
+    // Optimistic render
     c.msgs.push({
-      id: tempId, uid: 'me', text, img: tempImg, reply: tempReply,
-      time: T(), edited: false, reactions: {}, _temp: true
+      id: '_tmp_' + Date.now(), uid: 'me', text, img: tempImg,
+                reply: tempReply, time: T(), edited: false, reactions: {}, _temp: true
     });
     renderMsgs();
     sendMessageViaWebSocket(null, text, tempImg, tempReply, true, dmChannelId);
@@ -3422,7 +3473,7 @@ function handleNewChannelMessage(channelId, message) {
       c.msgs.splice(tempIdx, 1);
     }
   }
-
+  
   c.msgs.push({
     id: message.id,
     uid: message.user_id === S.me.id ? 'me' : message.user_id,
@@ -3450,20 +3501,20 @@ function handleNewDMMessage(dmChannelId, message) {
     accent: message.accent,
     avatar: message.avatar
   });
-  
+
   // Update last activity timestamp so DM sorts to top
   S.dmLastActivity[dmChannelId] = new Date().toISOString();
-  
+
   // Find the DM channel in the home server
   const homeServer = S.servers.find(s => s.id === 'home');
   let dmChannel = null;
   if (homeServer) {
     dmChannel = homeServer.dms.find(d => d.id === dmChannelId);
   }
-  
+
   const c = ch();
   const isViewingThisDM = c && c.id === dmChannelId;
-  
+
   // If NOT viewing this DM, mark as unread and re-render sidebar
   if (!isViewingThisDM) {
     if (message.user_id !== S.me.id) {
@@ -3490,14 +3541,14 @@ function handleNewDMMessage(dmChannelId, message) {
     autoSave();
     return;
   }
-  
+
   // User IS viewing this DM — handle normally
   // Remove optimistic temp message if this is our own echo
   if (message.user_id === S.me.id) {
     const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
     if (tempIdx > -1) c.msgs.splice(tempIdx, 1);
   }
-  
+
   c.msgs.push({
     id: message.id,
     uid: message.user_id === S.me.id ? 'me' : message.user_id,
@@ -3511,7 +3562,7 @@ function handleNewDMMessage(dmChannelId, message) {
               userColor: message.color || '#58a6ff',
               sys: message.is_system || false
   });
-  
+
   renderMsgs();
   renderSidebar();
   autoSave();
@@ -4661,6 +4712,7 @@ document.getElementById('explore-upload-submit').addEventListener('click', async
     submitBtn.textContent = 'Post';
   }
 });
+
 
 
 
