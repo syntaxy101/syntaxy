@@ -59,6 +59,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .ch-item.active{background:var(--surface2);color:var(--text);font-weight:600}
 .ch-item .ch-icon{font-size:14px;flex-shrink:0;width:18px;text-align:center}
 .ch-item .ch-name{overflow:hidden;text-overflow:ellipsis}
+.ch-item.dm-unread{background:rgba(88,166,255,.08);border-left:3px solid var(--accent);padding-left:7px}
+.ch-item.dm-unread .ch-name{color:var(--text);font-weight:700}
 .dm-av-sm{width:24px;height:24px;border-radius:50%;flex-shrink:0;overflow:hidden}
 
 /* Gradient sidebar body option */
