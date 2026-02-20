@@ -163,7 +163,7 @@ const S={
   view:'dms', // 'server' | 'dms'
   replyTo:null, pendingImg:null, pendingChBg:null, ctxId:null, ctxChId:null,
   searchActive:false, editingChannelId:null, currentGalleryUserId:null,
-  unreadDMs:{}, dmLastActivity:{}
+  unreadDMs:{}, dmLastActivity:{}, pinnedDMs:[]
 };
 
 /* ─── INDEXEDDB PERSISTENCE ─── */
@@ -305,7 +305,10 @@ async function saveState() {
       servers: S.servers,
       srvId: S.srvId,
       chId: S.chId,
-      view: S.view
+      view: S.view,
+      unreadDMs: S.unreadDMs,
+      dmLastActivity: S.dmLastActivity,
+      pinnedDMs: S.pinnedDMs
     });
 
     const dataToSave = {
@@ -346,6 +349,9 @@ function loadState() {
           if (data.srvId) S.srvId = data.srvId;
           if (data.chId) S.chId = data.chId;
           if (data.view) S.view = data.view;
+          if (data.unreadDMs) S.unreadDMs = data.unreadDMs;
+          if (data.dmLastActivity) S.dmLastActivity = data.dmLastActivity;
+          if (data.pinnedDMs) S.pinnedDMs = data.pinnedDMs;
 
           // Ensure we have valid server/channel references
           if (!S.servers.find(s => s.id === S.srvId)) {
@@ -914,8 +920,11 @@ function renderSidebar(){
     const homeServer = S.servers.find(srv => srv.id === 'home');
     const dmList = homeServer ? homeServer.dms : [];
 
-    // Sort DMs by last activity (most recent first)
+    // Sort DMs: pinned first, then by last activity
     dmList.sort((a, b) => {
+      const pinA = S.pinnedDMs.includes(a.id) ? 1 : 0;
+      const pinB = S.pinnedDMs.includes(b.id) ? 1 : 0;
+      if (pinA !== pinB) return pinB - pinA;
       const tA = S.dmLastActivity[a.id] || '';
       const tB = S.dmLastActivity[b.id] || '';
       if (tA && tB) return new Date(tB) - new Date(tA);
@@ -949,17 +958,29 @@ function renderSidebar(){
 
     dmList.forEach(d=>{
       const u=U(d.userId);
-
+      
       const el=document.createElement('div');
-      const isUnread = S.unreadDMs[d.id];
-      el.className='ch-item'+(d.id===S.chId?' active':'')+(isUnread?' dm-unread':'');
-      el.innerHTML=`<div class="dm-av-sm">${avHTML(u,24)}</div><span class="ch-name">${u.name}</span>`;
+      const unreadCount = S.unreadDMs[d.id] || 0;
+      const isPinned = S.pinnedDMs.includes(d.id);
+      el.className='ch-item'+(d.id===S.chId?' active':'')+(unreadCount?' dm-unread':'');
+      el.dataset.dmid = d.id;
+      
+      const countLabel = unreadCount > 10 ? '10+' : (unreadCount > 0 ? String(unreadCount) : '');
+      const pinIcon = isPinned ? '<span class="dm-pin-icon" title="Pinned">📌</span>' : '';
+      const badgeHTML = countLabel ? `<span class="dm-unread-badge">${countLabel}</span>` : '';
+      
+      el.innerHTML=`<div class="dm-av-sm">${avHTML(u,24)}</div>${pinIcon}<span class="ch-name">${u.name}</span>${badgeHTML}`;
       el.onclick=()=>{
         S.chId=d.id;
         delete S.unreadDMs[d.id];
         renderAll();
         autoSave();
       };
+      // Right-click for DM context menu
+      el.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        openDMCtx(e, d.id);
+      });
       body.appendChild(el);
     });
   } else {
@@ -987,6 +1008,49 @@ function renderSidebar(){
     });
   }
 }
+
+/* ─── DM CONTEXT MENU ─── */
+let ctxDmId = null;
+
+function openDMCtx(e, dmId) {
+  ctxDmId = dmId;
+  const m = document.getElementById('ctx-dm');
+  const isPinned = S.pinnedDMs.includes(dmId);
+  document.getElementById('ctx-dm-pin').innerHTML = isPinned
+  ? '<span class="ctx-ico">📌</span>Unpin DM'
+  : '<span class="ctx-ico">📌</span>Pin DM';
+  m.style.display = 'block';
+  let x = e.clientX, y = e.clientY;
+  requestAnimationFrame(() => {
+    const mw = m.offsetWidth, mh = m.offsetHeight;
+    if (x + mw > window.innerWidth) x = window.innerWidth - mw - 8;
+    if (y + mh > window.innerHeight) y = window.innerHeight - mh - 8;
+    m.style.left = x + 'px';
+    m.style.top = y + 'px';
+  });
+}
+
+function closeDMCtx() {
+  document.getElementById('ctx-dm').style.display = 'none';
+  ctxDmId = null;
+}
+
+document.getElementById('ctx-dm-pin').onclick = () => {
+  if (ctxDmId === null) return;
+  const idx = S.pinnedDMs.indexOf(ctxDmId);
+  if (idx > -1) {
+    S.pinnedDMs.splice(idx, 1);
+  } else {
+    S.pinnedDMs.push(ctxDmId);
+  }
+  closeDMCtx();
+  renderSidebar();
+  autoSave();
+};
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#ctx-dm')) closeDMCtx();
+});
 
 function renderHeader(){
   const c=ch(); if(!c) return;
@@ -1623,12 +1687,22 @@ async function send() {
 
   // If it's a real channel (from database), send via WebSocket
   if (c.type === 'ch' && typeof c.id === 'number') {
-    // Send via WebSocket
+    const tempId = '_tmp_' + Date.now();
+    c.msgs.push({
+      id: tempId, uid: 'me', text, img: tempImg, reply: tempReply,
+      time: T(), edited: false, reactions: {}, _temp: true
+    });
+    renderMsgs();
     sendMessageViaWebSocket(channelId, text, tempImg, tempReply, false, null);
   } else if (isDM) {
-    // For DMs, send via WebSocket if available
+    // Optimistic: show message immediately
+    const tempId = '_tmp_' + Date.now();
+    c.msgs.push({
+      id: tempId, uid: 'me', text, img: tempImg, reply: tempReply,
+      time: T(), edited: false, reactions: {}, _temp: true
+    });
+    renderMsgs();
     sendMessageViaWebSocket(null, text, tempImg, tempReply, true, dmChannelId);
-    // Update last activity so this DM sorts to top
     S.dmLastActivity[dmChannelId] = new Date().toISOString();
     renderSidebar();
   } else {
@@ -3338,6 +3412,16 @@ function handleNewChannelMessage(channelId, message) {
 
   const c = ch();
   if (!c || c.id !== channelId) return;
+  
+  // Remove optimistic temp message
+  if (message.user_id === S.me.id) {
+    const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
+    if (tempIdx > -1) {
+      const tempRow = document.querySelector(`.msg-row[data-id="${c.msgs[tempIdx].id}"]`);
+      if (tempRow) tempRow.remove();
+      c.msgs.splice(tempIdx, 1);
+    }
+  }
 
   c.msgs.push({
     id: message.id,
@@ -3383,7 +3467,7 @@ function handleNewDMMessage(dmChannelId, message) {
   // If NOT viewing this DM, mark as unread and re-render sidebar
   if (!isViewingThisDM) {
     if (message.user_id !== S.me.id) {
-      S.unreadDMs[dmChannelId] = true;
+      S.unreadDMs[dmChannelId] = (S.unreadDMs[dmChannelId] || 0) + 1;
     }
     // Still push the message to the DM's message array so it's there when they open it
     if (dmChannel && dmChannel.msgs) {
