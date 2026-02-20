@@ -1165,48 +1165,6 @@ async function renderMsgs(){
   }
 }
 
-  // If we switched channels, clear everything and do full render
-  if(lastRenderedChId !== S.chId) {
-    wrap.innerHTML = '';
-    lastRenderedChId = S.chId;
-
-    if(c.msgs && c.msgs.length > 0) {
-      c.msgs.forEach(m => {
-        const row = createMsgRow(m);
-        wrap.appendChild(row);
-      });
-    }
-    wrap.scrollTop = wrap.scrollHeight;
-    return;
-  }
-
-  // Same channel - only add new messages
-  const existingIds = new Set(
-    Array.from(wrap.querySelectorAll('.msg-row[data-id]'))
-    .map(el => el.dataset.id).filter(Boolean)
-  );
-
-  const newMessages = c.msgs.filter(m => !existingIds.has(String(m.id)));
-
-  // Append only new messages with animation
-  newMessages.forEach(m => {
-    const row = createMsgRow(m);
-    row.style.opacity = '0';
-    row.style.transform = 'translateY(20px)';
-    wrap.appendChild(row);
-
-    requestAnimationFrame(() => {
-      row.style.opacity = '1';
-      row.style.transform = 'translateY(0)';
-    });
-  });
-
-  // Auto-scroll if user is near bottom
-  if(wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 150) {
-    wrap.scrollTop = wrap.scrollHeight;
-  }
-}
-
 function createMsgRow(m, prevMsg) {
   const c = ch();
   const isMe = m.uid === 'me';
@@ -4712,7 +4670,6 @@ document.getElementById('explore-upload-submit').addEventListener('click', async
     submitBtn.textContent = 'Post';
   }
 });
-
 
 
 
