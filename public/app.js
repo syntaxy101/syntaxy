@@ -1017,8 +1017,9 @@ async function renderMsgs(){
   const c=ch(); if(!c) return;
   const wrap=document.getElementById('messages-wrap');
 
-  // Load messages from API only if not already loaded
-  if ((!_loadedChannels.has(c.id) || c.msgs.length === 0) && typeof c.id === 'number') {
+  // Load messages from API - always re-fetch DMs to get messages sent while away
+  const shouldFetch = typeof c.id === 'number' && (!_loadedChannels.has(c.id) || c.msgs.length === 0 || c.type === 'dm');
+  if (shouldFetch) {
     _loadedChannels.add(c.id);
     try {
       const endpoint = c.type === 'dm'
@@ -1627,6 +1628,9 @@ async function send() {
   } else if (isDM) {
     // For DMs, send via WebSocket if available
     sendMessageViaWebSocket(null, text, tempImg, tempReply, true, dmChannelId);
+    // Update last activity so this DM sorts to top
+    S.dmLastActivity[dmChannelId] = new Date().toISOString();
+    renderSidebar();
   } else {
     // Local-only (demo channels)
     c.msgs.push({
@@ -3362,16 +3366,54 @@ function handleNewDMMessage(dmChannelId, message) {
     accent: message.accent,
     avatar: message.avatar
   });
-
+  
+  // Update last activity timestamp so DM sorts to top
+  S.dmLastActivity[dmChannelId] = new Date().toISOString();
+  
+  // Find the DM channel in the home server
+  const homeServer = S.servers.find(s => s.id === 'home');
+  let dmChannel = null;
+  if (homeServer) {
+    dmChannel = homeServer.dms.find(d => d.id === dmChannelId);
+  }
+  
   const c = ch();
-  if (!c || c.id !== dmChannelId) return;
-
+  const isViewingThisDM = c && c.id === dmChannelId;
+  
+  // If NOT viewing this DM, mark as unread and re-render sidebar
+  if (!isViewingThisDM) {
+    if (message.user_id !== S.me.id) {
+      S.unreadDMs[dmChannelId] = true;
+    }
+    // Still push the message to the DM's message array so it's there when they open it
+    if (dmChannel && dmChannel.msgs) {
+      dmChannel.msgs.push({
+        id: message.id,
+        uid: message.user_id === S.me.id ? 'me' : message.user_id,
+        text: message.text || '',
+        img: message.image || null,
+        reply: message.reply_to,
+        time: new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+                          edited: message.edited,
+                          reactions: message.reactions || {},
+                          username: message.username,
+                          userColor: message.color || '#58a6ff',
+                          sys: message.is_system || false
+      });
+    }
+    // Re-render sidebar to update order and show unread badge
+    renderSidebar();
+    autoSave();
+    return;
+  }
+  
+  // User IS viewing this DM — handle normally
   // Remove optimistic temp message if this is our own echo
   if (message.user_id === S.me.id) {
     const tempIdx = c.msgs.findIndex(m => m._temp && m.text === (message.text || ''));
     if (tempIdx > -1) c.msgs.splice(tempIdx, 1);
   }
-
+  
   c.msgs.push({
     id: message.id,
     uid: message.user_id === S.me.id ? 'me' : message.user_id,
@@ -3385,8 +3427,9 @@ function handleNewDMMessage(dmChannelId, message) {
               userColor: message.color || '#58a6ff',
               sys: message.is_system || false
   });
-
+  
   renderMsgs();
+  renderSidebar();
   autoSave();
 }
 
@@ -4534,5 +4577,6 @@ document.getElementById('explore-upload-submit').addEventListener('click', async
     submitBtn.textContent = 'Post';
   }
 });
+
 
 
